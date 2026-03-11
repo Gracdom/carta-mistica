@@ -1,0 +1,25 @@
+/* Estilos específicos de componentes que no se pueden lograr con Tailwind solo */
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050511;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #7C3AED40;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #7C3AED80;
+}
+
+/* Selección de texto */
+::selection {
+  background-color: #7C3AED40;
+  color: #ffffff;
+}

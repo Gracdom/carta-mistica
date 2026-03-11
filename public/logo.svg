@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 110" fill="none">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&amp;display=swap');
+    </style>
+  </defs>
+
+  <!-- Texto "Carta Mística" -->
+  <text
+    x="10"
+    y="80"
+    font-family="'Playfair Display', Georgia, serif"
+    font-size="72"
+    font-style="italic"
+    fill="#8B7FD4"
+    letter-spacing="-1"
+  >Carta Mística</text>
+
+  <!-- Carta izquierda (girada levemente) -->
+  <g transform="translate(430, 8) rotate(-8, 25, 45)">
+    <rect x="2" y="2" width="44" height="66" rx="4" ry="4"
+      stroke="#7C6FC4" stroke-width="1.5" fill="none" opacity="0.75"/>
+    <!-- Esquinas decorativas -->
+    <path d="M2,2 L12,2 M2,2 L2,12" stroke="#7C6FC4" stroke-width="1.5" opacity="0.75"/>
+    <path d="M46,2 L36,2 M46,2 L46,12" stroke="#7C6FC4" stroke-width="1.5" opacity="0.75"/>
+    <path d="M2,68 L12,68 M2,68 L2,58" stroke="#7C6FC4" stroke-width="1.5" opacity="0.75"/>
+    <path d="M46,68 L36,68 M46,68 L46,58" stroke="#7C6FC4" stroke-width="1.5" opacity="0.75"/>
+    <!-- Diamante central -->
+    <path d="M24,26 L30,35 L24,44 L18,35 Z" stroke="#7C6FC4" stroke-width="1.2" fill="none" opacity="0.75"/>
+    <circle cx="24" cy="35" r="2" fill="#7C6FC4" opacity="0.6"/>
+  </g>
+
+  <!-- Carta derecha (girada levemente en sentido contrario) -->
+  <g transform="translate(458, 14) rotate(5, 25, 45)">
+    <rect x="2" y="2" width="44" height="66" rx="4" ry="4"
+      stroke="#7C6FC4" stroke-width="1.5" fill="none" opacity="0.6"/>
+    <!-- Esquinas decorativas -->
+    <path d="M2,2 L12,2 M2,2 L2,12" stroke="#7C6FC4" stroke-width="1.5" opacity="0.6"/>
+    <path d="M46,2 L36,2 M46,2 L46,12" stroke="#7C6FC4" stroke-width="1.5" opacity="0.6"/>
+    <path d="M2,68 L12,68 M2,68 L2,58" stroke="#7C6FC4" stroke-width="1.5" opacity="0.6"/>
+    <path d="M46,68 L36,68 M46,68 L46,58" stroke="#7C6FC4" stroke-width="1.5" opacity="0.6"/>
+    <!-- Diamante central -->
+    <path d="M24,26 L30,35 L24,44 L18,35 Z" stroke="#7C6FC4" stroke-width="1.2" fill="none" opacity="0.6"/>
+    <circle cx="24" cy="35" r="2" fill="#7C6FC4" opacity="0.5"/>
+  </g>
+</svg>
