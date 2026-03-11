@@ -23,8 +23,7 @@ export default function Header() {
           <img
             src="/logo.png"
             alt="Carta Mística"
-            className="h-10 sm:h-11 w-auto object-contain"
-            style={{ filter: 'drop-shadow(0 0 8px rgba(167,139,250,0.4))' }}
+            className="h-12 sm:h-14 w-auto object-contain"
           />
         </Link>
 
@@ -73,8 +72,7 @@ export default function Header() {
         <div className="md:hidden bg-[#0D0B2B] border-t border-white/10 px-5 py-5 flex flex-col gap-4">
           {/* Logo mobile */}
           <Link to="/" onClick={() => setOpen(false)} className="mb-1">
-            <img src="/logo.png" alt="Carta Mística" className="h-9 w-auto object-contain"
-              style={{ filter: 'drop-shadow(0 0 6px rgba(167,139,250,0.4))' }} />
+            <img src="/logo.png" alt="Carta Mística" className="h-11 w-auto object-contain" />
           </Link>
 
           {NAV.map(({ label, to }) => (

@@ -13,8 +13,7 @@ export default function Footer() {
               <img
                 src="/logo.png"
                 alt="Carta Mística"
-                className="h-10 w-auto object-contain"
-                style={{ filter: 'drop-shadow(0 0 6px rgba(167,139,250,0.3))' }}
+                className="h-12 w-auto object-contain"
               />
             </Link>
             <p className="text-gray-500 text-sm leading-relaxed mb-5">

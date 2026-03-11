@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Star, Search, MessageCircle, Phone, ChevronDown, ChevronUp,
   CheckCircle, Shield, Lock, Heart, Briefcase, Users, Flame,
-  Clock, CreditCard, ArrowRight, Sparkles, MapPin
+  Clock, CreditCard, ArrowRight, Sparkles, MapPin, Loader2
 } from 'lucide-react'
-import { TAROTISTAS, FAQS } from '../data/tarotistas'
+import { FAQS } from '../data/tarotistas'
+import { supabase } from '../lib/supabase'
 import TarotistCard from '../components/TarotistCard'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
@@ -328,7 +329,31 @@ function ComoFunciona() {
 
 // ── Tarotistas destacados ─────────────────────────────────────────────────────
 function TarotistasDestacados() {
-  const top = TAROTISTAS.filter(t => t.estado === 'online').slice(0, 4)
+  const [top, setTop] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase
+      .from('tarotistas')
+      .select('*')
+      .eq('estado', 'online')
+      .eq('activo', true)
+      .order('rating', { ascending: false })
+      .limit(4)
+      .then(({ data }) => {
+        if (data) setTop(data.map(t => ({
+          ...t,
+          id: t.slug,
+          reseñas: t['reseñas_count'],
+          lecturas: t.lecturas_count,
+          precioPorMinuto: t.precio_por_minuto,
+          precioChat: t.precio_chat,
+          precioLlamada: t.precio_llamada,
+          foto: t.foto_url,
+        })))
+        setLoading(false)
+      })
+  }, [])
 
   return (
     <section className="bg-[#050511] py-20 sm:py-24">
@@ -348,9 +373,15 @@ function TarotistasDestacados() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {top.map(t => <TarotistCard key={t.id} t={t} />)}
-        </div>
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <Loader2 size={32} className="text-purple-400 animate-spin" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {top.map(t => <TarotistCard key={t.id} t={t} />)}
+          </div>
+        )}
       </div>
     </section>
   )

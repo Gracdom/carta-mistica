@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import {
   Star, MessageCircle, Phone, ChevronLeft, MapPin,
-  CheckCircle, XCircle, Shield, Lock, ChevronDown, ChevronUp
+  CheckCircle, XCircle, Shield, Lock, ChevronDown, ChevronUp, Loader2
 } from 'lucide-react'
-import { TAROTISTAS } from '../data/tarotistas'
+import { supabase } from '../lib/supabase'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 
@@ -25,8 +25,65 @@ const CHIP_COLORS = [
 
 export default function Perfil() {
   const { id } = useParams()
-  const t = TAROTISTAS.find(x => x.id === id)
+  const [t, setT] = useState(null)
+  const [reseñas, setReseñas] = useState([])
+  const [loading, setLoading] = useState(true)
   const [verMasReseñas, setVerMasReseñas] = useState(false)
+
+  useEffect(() => {
+    async function fetchPerfil() {
+      setLoading(true)
+      const { data: tarotista } = await supabase
+        .from('tarotistas')
+        .select('*')
+        .eq('slug', id)
+        .single()
+
+      if (tarotista) {
+        setT({
+          ...tarotista,
+          reseñas: tarotista['reseñas_count'],
+          lecturas: tarotista.lecturas_count,
+          precioPorMinuto: tarotista.precio_por_minuto,
+          precioChat: tarotista.precio_chat,
+          precioLlamada: tarotista.precio_llamada,
+          precioPromoChat: tarotista.precio_promo_chat,
+          precioPromoLlamada: tarotista.precio_promo_llamada,
+          descuentoPromo: tarotista.descuento_promo,
+          minutosGratis: tarotista.minutos_gratis,
+          foto: tarotista.foto_url,
+          descripcionServicios: tarotista.descripcion_servicios,
+          sobreMi: tarotista.sobre_mi,
+          serviciosAdicionales: tarotista.servicios_adicionales,
+          noRealiza: tarotista.no_realiza,
+        })
+
+        const { data: resData } = await supabase
+          .from('resenas')
+          .select('*')
+          .eq('tarotista_id', tarotista.id)
+          .order('created_at', { ascending: false })
+          .limit(10)
+
+        setReseñas((resData || []).map(r => ({
+          nombre: r.usuario_nombre,
+          fecha: new Date(r.created_at).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' }),
+          comentario: r.comentario,
+        })))
+      }
+      setLoading(false)
+    }
+    fetchPerfil()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="bg-[#050511] min-h-screen flex items-center justify-center">
+        <Header />
+        <Loader2 size={36} className="text-purple-400 animate-spin" />
+      </div>
+    )
+  }
 
   if (!t) {
     return (
@@ -204,7 +261,7 @@ export default function Perfil() {
                 </div>
 
                 <div className="space-y-4">
-                  {(verMasReseñas ? t.reseñasRecientes : t.reseñasRecientes.slice(0, 3)).map((r, i) => (
+                  {(verMasReseñas ? reseñas : reseñas.slice(0, 3)).map((r, i) => (
                     <div key={i} className="border-b border-white/5 pb-4 last:border-0 last:pb-0">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -223,7 +280,7 @@ export default function Perfil() {
                   ))}
                 </div>
 
-                {t.reseñasRecientes.length > 3 && (
+                {reseñas.length > 3 && (
                   <button
                     className="mt-4 text-purple-400 hover:text-purple-300 text-sm font-semibold flex items-center gap-1 transition-colors"
                     onClick={() => setVerMasReseñas(!verMasReseñas)}

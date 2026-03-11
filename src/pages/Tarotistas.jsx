@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react'
-import { SlidersHorizontal, X, Search, ChevronDown } from 'lucide-react'
-import { TAROTISTAS } from '../data/tarotistas'
+import { useState, useMemo, useEffect } from 'react'
+import { SlidersHorizontal, X, Search, ChevronDown, Loader2 } from 'lucide-react'
+import { supabase } from '../lib/supabase'
 import TarotistCard from '../components/TarotistCard'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
@@ -69,6 +69,39 @@ export default function Tarotistas() {
   const [pais, setPais] = useState('Todos')
   const [orden, setOrden] = useState('relevancia')
   const [busqueda, setBusqueda] = useState('')
+  const [TAROTISTAS, setTarotistas] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchTarotistas() {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('tarotistas')
+        .select('*')
+        .eq('activo', true)
+        .order('rating', { ascending: false })
+      if (!error && data) {
+        // Normalizar campo reseñas_count -> reseñas para compatibilidad con TarotistCard
+        setTarotistas(data.map(t => ({
+          ...t,
+          id: t.slug,
+          reseñas: t['reseñas_count'],
+          lecturas: t.lecturas_count,
+          precioPorMinuto: t.precio_por_minuto,
+          precioChat: t.precio_chat,
+          precioLlamada: t.precio_llamada,
+          precioPromoChat: t.precio_promo_chat,
+          precioPromoLlamada: t.precio_promo_llamada,
+          descuentoPromo: t.descuento_promo,
+          minutosGratis: t.minutos_gratis,
+          fotoUrl: t.foto_url,
+          foto: t.foto_url,
+        })))
+      }
+      setLoading(false)
+    }
+    fetchTarotistas()
+  }, [])
 
   const toggle = (arr, setArr, val) =>
     setArr(arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val])
@@ -256,7 +289,11 @@ export default function Tarotistas() {
 
             {/* Grid */}
             <div className="flex-1 min-w-0">
-              {resultados.length === 0 ? (
+              {loading ? (
+                <div className="flex items-center justify-center py-24">
+                  <Loader2 size={32} className="text-purple-400 animate-spin" />
+                </div>
+              ) : resultados.length === 0 ? (
                 <div className="text-center py-20">
                   <p className="text-gray-400 text-lg mb-2">Sin resultados</p>
                   <p className="text-gray-500 text-sm">Probá con otros filtros o limpiá la búsqueda.</p>
@@ -269,6 +306,7 @@ export default function Tarotistas() {
                   {resultados.map(t => <TarotistCard key={t.id} t={t} />)}
                 </div>
               )}
+              
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
 import {
   CheckCircle, Star, Users, TrendingUp, Shield, Globe,
   CreditCard, ArrowRight, ChevronLeft, Sparkles
@@ -31,7 +32,19 @@ export default function Unirse() {
   const [enviado, setEnviado] = useState(false)
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value })
-  const handleSubmit = e => { e.preventDefault(); setEnviado(true) }
+  const handleSubmit = async e => {
+    e.preventDefault()
+    await supabase.from('solicitudes_tarotista').insert({
+      nombre: form.nombre,
+      email: form.email,
+      whatsapp: form.whatsapp,
+      pais: form.pais,
+      especialidad: form.especialidad,
+      modelo: form.modelo,
+      mensaje: form.mensaje,
+    })
+    setEnviado(true)
+  }
 
   return (
     <div className="bg-[#050511] min-h-screen">
