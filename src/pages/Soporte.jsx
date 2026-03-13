@@ -76,7 +76,7 @@ const FAQS = [
       },
       {
         q: '¿Puedo eliminar mi cuenta?',
-        a: 'Sí, podés solicitar la eliminación de tu cuenta y datos personales en cualquier momento escribiéndonos a hola@cartamistica.com. Procesamos estas solicitudes en un plazo máximo de 7 días hábiles.',
+        a: 'Sí, podés solicitar la eliminación de tu cuenta y datos personales en cualquier momento escribiéndonos a info@cartamistica.com. Procesamos estas solicitudes en un plazo máximo de 7 días hábiles.',
       },
     ],
   },
@@ -155,24 +155,27 @@ export default function Soporte() {
               icon: Mail,
               titulo: 'Email',
               desc: 'Respondemos en menos de 24 hs',
-              valor: 'hola@cartamistica.com',
+              valor: 'info@cartamistica.com',
+              href: 'mailto:info@cartamistica.com',
               color: 'purple',
             },
             {
               icon: MessageCircle,
-              titulo: 'Chat en vivo',
-              desc: 'Disponible de lunes a viernes',
-              valor: 'Iniciar chat',
-              color: 'indigo',
+              titulo: 'WhatsApp',
+              desc: 'Solo mensajes de WhatsApp',
+              valor: '+34 910 202 911',
+              href: 'https://wa.me/34910202911',
+              color: 'green',
             },
             {
               icon: Clock,
               titulo: 'Horario de atención',
-              desc: 'Lun–Vie 9:00 a 18:00 (GMT-3)',
-              valor: 'Argentina & Latam',
+              desc: 'Lun–Vie 9:00 a 18:00 (GMT+1)',
+              valor: 'España & Latam',
+              href: null,
               color: 'violet',
             },
-          ].map(({ icon: Icon, titulo, desc, valor, color }) => (
+          ].map(({ icon: Icon, titulo, desc, valor, href, color }) => (
             <div
               key={titulo}
               className={`bg-white/3 border border-white/8 rounded-2xl p-6 hover:border-${color}-500/30 transition-all group`}
@@ -182,7 +185,10 @@ export default function Soporte() {
               </div>
               <h3 className="text-white font-semibold mb-1">{titulo}</h3>
               <p className="text-gray-500 text-sm mb-2">{desc}</p>
-              <p className={`text-${color}-400 text-sm font-medium`}>{valor}</p>
+              {href
+                ? <a href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer" className={`text-${color}-400 hover:text-${color}-300 text-sm font-medium transition-colors`}>{valor}</a>
+                : <p className={`text-${color}-400 text-sm font-medium`}>{valor}</p>
+              }
             </div>
           ))}
         </div>

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Mail, Instagram, Facebook, Youtube } from 'lucide-react'
+import { Mail, Instagram, Facebook, Youtube, Phone } from 'lucide-react'
 
 export default function Footer() {
   return (
@@ -99,9 +99,15 @@ export default function Footer() {
                 </Link>
               </li>
             </ul>
-            <div className="mt-5 flex items-center gap-2 text-gray-500 text-sm">
-              <Mail size={14} className="text-purple-400 flex-shrink-0" />
-              hola@cartamistica.com
+            <div className="mt-5 space-y-2">
+              <a href="mailto:info@cartamistica.com" className="flex items-center gap-2 text-gray-500 hover:text-gray-300 text-sm transition-colors">
+                <Mail size={14} className="text-purple-400 flex-shrink-0" />
+                info@cartamistica.com
+              </a>
+              <a href="https://wa.me/34910202911" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-500 hover:text-green-400 text-sm transition-colors">
+                <Phone size={14} className="text-green-500 flex-shrink-0" />
+                +34 910 202 911 <span className="text-xs text-gray-600">(solo WhatsApp)</span>
+              </a>
             </div>
           </div>
         </div>
