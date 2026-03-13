@@ -1,518 +1,310 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Star, Search, MessageCircle, Phone, ChevronDown, ChevronUp,
-  CheckCircle, Shield, Lock, Heart, Briefcase, Users, Flame,
-  Clock, CreditCard, ArrowRight, Sparkles, MapPin, Loader2
+  Sparkles, BookOpen, Lock, Star, ChevronDown, ChevronUp,
+  ArrowRight, Shield, Heart, Eye, Zap, Moon, CheckCircle
 } from 'lucide-react'
-import { FAQS } from '../data/tarotistas'
-import { supabase } from '../lib/supabase'
-import TarotistCard from '../components/TarotistCard'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 
-const PAISES = ['Argentina', 'Chile', 'México']
-
-// Estrellas flotantes animadas con CSS puro
-const STARS = Array.from({ length: 60 }, (_, i) => ({
+// ── Datos estáticos ───────────────────────────────────────────────────────────
+const STARS_BG = Array.from({ length: 65 }, (_, i) => ({
   id: i,
-  top: `${Math.random() * 100}%`,
-  left: `${Math.random() * 100}%`,
-  size: Math.random() < 0.3 ? 2 : 1,
-  delay: `${(Math.random() * 6).toFixed(2)}s`,
-  duration: `${(3 + Math.random() * 5).toFixed(2)}s`,
-  opacity: (0.15 + Math.random() * 0.55).toFixed(2),
+  top:  `${((i * 97.3) % 100).toFixed(1)}%`,
+  left: `${((i * 137.5) % 100).toFixed(1)}%`,
+  size: ((i * 7 + 3) % 22) / 10 + 0.7,
+  dur:  `${(((i * 3 + 2) % 28) / 10 + 2).toFixed(1)}s`,
+  delay:`${(((i * 5) % 50) / 10).toFixed(1)}s`,
 }))
 
-// Símbolos arcanos flotantes
-const ARCANA = ['☽', '✦', '⊕', '⋆', '᯾', '⌖', '✧', '◈', '⟡', '᳁']
+const SIMBOLOS_HERO = [
+  { char:'✦', x:'5%',  y:'14%', dur:7,  delay:0   },
+  { char:'☽', x:'93%', y:'10%', dur:9,  delay:1   },
+  { char:'◈', x:'7%',  y:'60%', dur:8,  delay:2   },
+  { char:'✴', x:'92%', y:'55%', dur:6,  delay:0.5 },
+  { char:'⬡', x:'2%',  y:'82%', dur:10, delay:3   },
+  { char:'✧', x:'95%', y:'78%', dur:7,  delay:1.5 },
+  { char:'⋆', x:'48%', y:'4%',  dur:8,  delay:2.5 },
+  { char:'✦', x:'18%', y:'92%', dur:6,  delay:0.8 },
+  { char:'☽', x:'80%', y:'88%', dur:9,  delay:3.5 },
+]
+
+const PASOS = [
+  { n:'01', icon:'✦', titulo:'Completás el formulario', desc:'Nombre, fecha y lugar de nacimiento, y tu pregunta o intención principal. Solo toma 2 minutos.' },
+  { n:'02', icon:'☽', titulo:'La IA accede al campo akáshico', desc:'Nuestro sistema de inteligencia espiritual consulta los registros y genera tu lectura personalizada.' },
+  { n:'03', icon:'◈', titulo:'Recibís tu vista previa gratis', desc:'Leés los primeros párrafos de tu registro: tu energía, primera impresión del alma y un destello de tu misión.' },
+  { n:'04', icon:'✴', titulo:'Desbloqueás la lectura completa', desc:'Con un único pago accedés al registro completo: misión, karma, bloqueos y mensaje de tus Guardianes.' },
+]
+
+const QUE_INCLUYE = [
+  { icon:<BookOpen size={20}/>, titulo:'Origen del alma y misión de vida', desc:'De dónde viene tu alma, cuál es su arquetipo y cuál es la misión que eligió en esta encarnación.' },
+  { icon:<Moon size={20}/>,     titulo:'Patrones kármicos y bloqueos', desc:'Los contratos del alma pendientes, patrones repetitivos y qué te frena de avanzar en esta vida.' },
+  { icon:<Eye size={20}/>,      titulo:'Respuesta a tu pregunta', desc:'Los Registros responden directamente tu intención: amor, propósito, dinero, relaciones, bloqueos.' },
+  { icon:<Sparkles size={20}/>, titulo:'Mensaje de tus Guardianes', desc:'Un mensaje especial de los Guardianes y Maestros de tu Registro Akáshico, con cierre y guía.' },
+  { icon:<Zap size={20}/>,      titulo:'IA entrenada en sabiduría akáshica', desc:'Generada por inteligencia artificial especializada, con el lenguaje y profundidad de un registro real.' },
+  { icon:<Shield size={20}/>,   titulo:'100% privado y confidencial', desc:'Tus datos y tu lectura son completamente privados. Nadie más accede a tu registro.' },
+]
+
+const PREGUNTAS = [
+  { emoji:'❤️', tema:'Amor y relaciones',     ej:'¿Por qué atraigo siempre el mismo tipo de relación?' },
+  { emoji:'🌟', tema:'Propósito de vida',      ej:'¿Cuál es la misión de mi alma en esta encarnación?' },
+  { emoji:'💰', tema:'Dinero y abundancia',    ej:'¿Qué bloqueos kármicos me impiden prosperar?' },
+  { emoji:'🔥', tema:'Llamas gemelas',          ej:'¿Cuál es el contrato del alma con mi llama gemela?' },
+  { emoji:'🌿', tema:'Salud y energía',         ej:'¿Qué debo sanar a nivel del alma para avanzar?' },
+  { emoji:'✨', tema:'Dones espirituales',      ej:'¿Cuáles son mis talentos y dones del alma?' },
+]
+
+const TESTIMONIOS = [
+  { nombre:'Valeria M.', pais:'Argentina', stars:5, texto:'Fue increíblemente preciso. Habló de patrones que nadie más conocía y me dio claridad sobre mi relación. La lectura completa fue un regalo para mi alma.' },
+  { nombre:'Camila R.',  pais:'Chile',     stars:5, texto:'Lloré leyendo mi registro. Describió exactamente los bloqueos con el dinero que llevo años trabajando. Lo recomiendo a todos los que buscan respuestas profundas.' },
+  { nombre:'Sofía L.',   pais:'México',    stars:5, texto:'La vista previa ya fue poderosa. Cuando desbloqueé la lectura completa entendí por qué repito los mismos patrones en el amor. Gracias por este servicio.' },
+]
+
+const FAQS = [
+  { p:'¿Qué son los Registros Akáshicos?', r:'Los Registros Akáshicos son el campo energético que contiene la historia completa de cada alma: sus vidas pasadas, contratos, bloqueos kármicos y misión de vida. Acceder a ellos permite obtener orientación espiritual profunda.' },
+  { p:'¿La lectura es generada por inteligencia artificial?', r:'Sí. Utilizamos inteligencia artificial especializada entrenada para acceder al campo akáshico con el lenguaje y la profundidad de una lectura real. Los datos que proporcionás (nombre, fecha, lugar y pregunta) son el "portal" para tu lectura personalizada.' },
+  { p:'¿Cuánto cuesta la lectura completa?', r:'La vista previa siempre es gratuita. La lectura completa se desbloquea con un único pago que te dará acceso inmediato a todos los secciones de tu Registro Akáshico.' },
+  { p:'¿Qué necesito para hacer mi consulta?', r:'Solo necesitás tu nombre completo, fecha de nacimiento, ciudad o país de nacimiento (opcional pero recomendado) y una pregunta o intención clara. Con eso los Registros se abren.' },
+  { p:'¿Mis datos son privados?', r:'Absolutamente. Tu nombre, fecha de nacimiento y lectura son completamente confidenciales. Nunca compartimos tu información con terceros.' },
+  { p:'¿Puedo hacer más de una consulta?', r:'Sí. Cada consulta abre un registro nuevo con una pregunta o intención diferente. Podés consultar sobre amor, trabajo, propósito o cualquier área de tu vida.' },
+]
+
+// ── Estilos globales ──────────────────────────────────────────────────────────
+const GLOBAL_STYLES = `
+  @keyframes twinkle    { 0%,100%{opacity:.1;transform:scale(.8)} 50%{opacity:.85;transform:scale(1.2)} }
+  @keyframes floatY     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-16px)} }
+  @keyframes floatYR    { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-18px) rotate(12deg)} }
+  @keyframes orbPulse   { 0%,100%{opacity:.18} 50%{opacity:.45} }
+  @keyframes ringRot    { from{transform:translate(-50%,-50%) rotate(0deg)}   to{transform:translate(-50%,-50%) rotate(360deg)} }
+  @keyframes ringRotR   { from{transform:translate(-50%,-50%) rotate(360deg)} to{transform:translate(-50%,-50%) rotate(0deg)} }
+  @keyframes shimmerGrd { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+  @keyframes fadeUp     { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes glowBtn    { 0%,100%{box-shadow:0 0 25px rgba(139,92,246,.35),0 4px 20px rgba(0,0,0,.5)} 50%{box-shadow:0 0 50px rgba(139,92,246,.6),0 4px 20px rgba(0,0,0,.5)} }
+  .grad-text {
+    background:linear-gradient(135deg,#c084fc 0%,#e879f9 30%,#a78bfa 65%,#818cf8 100%);
+    background-size:200% 200%; -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    animation:shimmerGrd 5s ease infinite;
+  }
+  .hero-title  { animation:fadeUp .7s ease forwards; }
+  .hero-sub    { animation:fadeUp .7s .15s ease both; }
+  .hero-cta    { animation:fadeUp .7s .3s ease both; }
+  .hero-stats  { animation:fadeUp .7s .45s ease both; }
+  .btn-glow    { animation:glowBtn 3s ease-in-out infinite; }
+  .btn-glow:hover { animation:none; box-shadow:0 0 60px rgba(139,92,246,.7),0 4px 20px rgba(0,0,0,.5) !important; }
+  .card-hover  { transition:transform .3s, box-shadow .3s, border-color .3s; }
+  .card-hover:hover { transform:translateY(-4px); box-shadow:0 8px 30px rgba(109,40,217,.2); }
+  .top-line    { background:linear-gradient(90deg,transparent,rgba(139,92,246,.55),transparent); }
+`
 
 // ── Hero ──────────────────────────────────────────────────────────────────────
 function Hero() {
-  const [pais, setPais] = useState('Argentina')
-
   return (
-    <section className="relative min-h-screen flex items-center justify-start bg-[#050511] overflow-hidden">
+    <section className="relative min-h-[92vh] flex flex-col items-center justify-center overflow-hidden text-center px-4"
+      style={{ background:'radial-gradient(ellipse 90% 75% at 50% -5%, #180f45 0%, #030312 65%)' }}>
 
-      {/* ── Estilos de animación global ── */}
-      <style>{`
-        @keyframes twinkle {
-          0%, 100% { opacity: var(--op); transform: scale(1); }
-          50% { opacity: calc(var(--op) * 0.2); transform: scale(0.5); }
-        }
-        @keyframes floatSlow {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          33% { transform: translateY(-18px) rotate(3deg); }
-          66% { transform: translateY(8px) rotate(-2deg); }
-        }
-        @keyframes floatMed {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-12px) rotate(5deg); }
-        }
-        @keyframes orbitCW {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-        @keyframes orbitCCW {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(-360deg); }
-        }
-        @keyframes pulseGlow {
-          0%, 100% { box-shadow: 0 0 20px 4px rgba(124,58,237,0.3); }
-          50% { box-shadow: 0 0 50px 16px rgba(124,58,237,0.55); }
-        }
-        @keyframes shimmer {
-          0% { background-position: -200% center; }
-          100% { background-position: 200% center; }
-        }
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(28px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .hero-title  { animation: fadeInUp 0.8s ease forwards; }
-        .hero-sub    { animation: fadeInUp 0.8s 0.15s ease both; }
-        .hero-bullets{ animation: fadeInUp 0.8s 0.3s ease both; }
-        .hero-cta    { animation: fadeInUp 0.8s 0.45s ease both; }
-        .hero-stats  { animation: fadeInUp 0.8s 0.6s ease both; }
-        .shimmer-text {
-          background: linear-gradient(90deg, #c4b5fd, #a78bfa, #7c3aed, #a78bfa, #c4b5fd);
-          background-size: 200% auto;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          animation: shimmer 4s linear infinite;
-        }
-        .orbit-cw  { animation: orbitCW  28s linear infinite; }
-        .orbit-ccw { animation: orbitCCW 20s linear infinite; }
-        .orbit-cw2 { animation: orbitCW  40s linear infinite; }
-        .glow-pulse { animation: pulseGlow 3s ease-in-out infinite; }
-      `}</style>
-
-      {/* ── Fondo nebulosa multicapa ── */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 80% 70% at 68% 42%, rgba(109,40,217,0.28) 0%, transparent 55%)' }} />
-        <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 45% 55% at 80% 20%, rgba(124,58,237,0.18) 0%, transparent 50%)' }} />
-        <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 40% 40% at 10% 80%, rgba(79,70,229,0.15) 0%, transparent 50%)' }} />
-        <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 30% 30% at 90% 75%, rgba(139,92,246,0.12) 0%, transparent 50%)' }} />
-      </div>
-
-      {/* ── Campo de estrellas ── */}
-      <div className="absolute inset-0 pointer-events-none">
-        {STARS.map(s => (
-          <span
-            key={s.id}
-            className="absolute rounded-full bg-white"
-            style={{
-              top: s.top, left: s.left,
-              width: s.size, height: s.size,
-              '--op': s.opacity,
-              opacity: s.opacity,
-              animation: `twinkle ${s.duration} ${s.delay} ease-in-out infinite`,
-            }}
-          />
+      {/* Stars */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {STARS_BG.map(s => (
+          <div key={s.id} className="absolute rounded-full bg-white"
+            style={{ width:s.size+'px', height:s.size+'px', top:s.top, left:s.left,
+              animation:`twinkle ${s.dur} ease-in-out infinite`, animationDelay:s.delay }} />
         ))}
       </div>
 
-      {/* ── Símbolos arcanos flotantes ── */}
-      {[
-        { sym:'☽', top:'12%', left:'6%',  size:'text-2xl', anim:'floatSlow 7s ease-in-out infinite', op:0.18 },
-        { sym:'✦', top:'22%', left:'88%', size:'text-lg',   anim:'floatMed  5s ease-in-out infinite', op:0.2  },
-        { sym:'⋆', top:'65%', left:'4%',  size:'text-xl',   anim:'floatSlow 9s 1s ease-in-out infinite', op:0.15 },
-        { sym:'◈', top:'75%', left:'92%', size:'text-2xl',  anim:'floatMed  6s 2s ease-in-out infinite', op:0.14 },
-        { sym:'✧', top:'88%', left:'20%', size:'text-lg',   anim:'floatSlow 8s 0.5s ease-in-out infinite', op:0.12 },
-        { sym:'⟡', top:'8%',  left:'55%', size:'text-xl',   anim:'floatMed  7s 1.5s ease-in-out infinite', op:0.13 },
-      ].map((a, i) => (
-        <span key={i} className={`absolute pointer-events-none ${a.size} text-purple-300 select-none`}
-          style={{ top:a.top, left:a.left, opacity:a.op, animation:a.anim }}>
-          {a.sym}
-        </span>
+      {/* Orbes */}
+      <div className="absolute rounded-full pointer-events-none"
+        style={{ width:'800px', height:'800px', background:'radial-gradient(circle,rgba(109,40,217,.13) 0%,transparent 65%)', top:'-280px', left:'50%', transform:'translateX(-50%)', animation:'orbPulse 9s ease-in-out infinite' }} />
+      <div className="absolute rounded-full pointer-events-none"
+        style={{ width:'380px', height:'380px', background:'radial-gradient(circle,rgba(168,85,247,.09) 0%,transparent 65%)', bottom:'-50px', left:'-80px', animation:'orbPulse 11s ease-in-out infinite', animationDelay:'2s' }} />
+      <div className="absolute rounded-full pointer-events-none"
+        style={{ width:'320px', height:'320px', background:'radial-gradient(circle,rgba(236,72,153,.07) 0%,transparent 65%)', bottom:'30px', right:'-50px', animation:'orbPulse 8s ease-in-out infinite', animationDelay:'5s' }} />
+
+      {/* Anillos arcanos */}
+      <div className="absolute rounded-full pointer-events-none"
+        style={{ width:'560px', height:'560px', border:'1px solid rgba(139,92,246,.08)', top:'50%', left:'50%', animation:'ringRot 30s linear infinite' }} />
+      <div className="absolute rounded-full pointer-events-none"
+        style={{ width:'720px', height:'720px', border:'1px dashed rgba(167,139,250,.05)', top:'50%', left:'50%', animation:'ringRotR 22s linear infinite' }} />
+      <div className="absolute rounded-full pointer-events-none"
+        style={{ width:'400px', height:'400px', border:'1px dotted rgba(139,92,246,.06)', top:'50%', left:'50%', animation:'ringRot 18s linear infinite' }} />
+
+      {/* Símbolos flotantes */}
+      {SIMBOLOS_HERO.map((s, i) => (
+        <div key={i} className="absolute pointer-events-none select-none text-purple-400/22"
+          style={{ left:s.x, top:s.y, fontSize:'1.2rem', animation:`floatYR ${s.dur}s ease-in-out infinite`, animationDelay:`${s.delay}s` }}>
+          {s.char}
+        </div>
       ))}
 
-      {/* ── Sistema de órbitas (lado derecho) ── */}
-      <div className="absolute right-[-8%] top-1/2 -translate-y-1/2 w-[480px] h-[480px] lg:w-[640px] lg:h-[640px] hidden lg:flex items-center justify-center pointer-events-none">
-
-        {/* Anillo exterior giratorio CW */}
-        <div className="orbit-cw2 absolute inset-0 rounded-full border border-purple-400/10" />
-
-        {/* Anillo medio giratorio CCW */}
-        <div className="orbit-ccw absolute inset-[70px] rounded-full border border-purple-500/18" style={{ borderStyle:'dashed' }}>
-          {/* Punto orbitante */}
-          <span className="absolute -top-1.5 left-1/2 w-3 h-3 -translate-x-1/2 rounded-full bg-purple-400/70 shadow-[0_0_10px_3px_rgba(167,139,250,0.6)]" />
+      {/* Contenido */}
+      <div className="relative max-w-4xl mx-auto pt-28 pb-16">
+        {/* Badge */}
+        <div className="hero-title inline-flex items-center gap-2.5 mb-8"
+          style={{ background:'linear-gradient(135deg,rgba(109,40,217,.28),rgba(168,85,247,.15))', border:'1px solid rgba(167,139,250,.35)', borderRadius:'9999px', padding:'10px 22px' }}>
+          <span className="text-purple-300" style={{ animation:'floatY 4s ease-in-out infinite' }}>✦</span>
+          <BookOpen size={13} className="text-purple-300" />
+          <span className="text-purple-200 text-xs font-semibold tracking-widest uppercase">Lectura de Registros Akáshicos con IA</span>
+          <span className="text-purple-300" style={{ animation:'floatY 4s ease-in-out infinite', animationDelay:'.5s' }}>✦</span>
         </div>
 
-        {/* Anillo interior CW */}
-        <div className="orbit-cw absolute inset-[140px] rounded-full border border-violet-400/22">
-          <span className="absolute -top-1 left-1/2 w-2 h-2 -translate-x-1/2 rounded-full bg-violet-300/80 shadow-[0_0_8px_2px_rgba(196,181,253,0.5)]" />
-          <span className="absolute top-1/2 -right-1 w-1.5 h-1.5 -translate-y-1/2 rounded-full bg-purple-400/60" />
+        {/* Título */}
+        <h1 className="hero-title font-playfair font-bold text-white leading-[1.08] mb-6"
+          style={{ fontSize:'clamp(2.8rem,8vw,5.5rem)' }}>
+          Descubrí los secretos<br />
+          <span className="grad-text">de tu alma</span>
+        </h1>
+
+        <p className="hero-sub text-gray-400 text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto mb-4">
+          Accedé al campo akáshico de tu alma y conocé tu misión de vida, tus bloqueos kármicos
+          y las respuestas espirituales que solo vos podés recibir.
+        </p>
+        <p className="text-purple-400/70 text-sm mb-10">
+          Vista previa gratuita · Lectura completa disponible tras el pago
+        </p>
+
+        {/* CTA */}
+        <div className="hero-cta flex flex-col sm:flex-row items-center justify-center gap-4 mb-14">
+          <Link to="/registros-akasicos"
+            className="btn-glow inline-flex items-center gap-2.5 text-white font-bold px-10 py-4 rounded-full text-base"
+            style={{ background:'linear-gradient(135deg,#6d28d9,#9333ea)', boxShadow:'0 0 28px rgba(139,92,246,.4)' }}>
+            <Sparkles size={18} /> Consultar mis Registros
+          </Link>
+          <a href="#como-funciona"
+            className="inline-flex items-center gap-2 text-gray-400 hover:text-white text-sm font-medium transition-colors border border-white/10 hover:border-white/20 px-6 py-4 rounded-full">
+            Ver cómo funciona <ArrowRight size={14} />
+          </a>
         </div>
 
-        {/* Glow central */}
-        <div className="absolute inset-[200px] rounded-full glow-pulse"
-          style={{ background:'radial-gradient(circle, rgba(124,58,237,0.35) 0%, rgba(109,40,217,0.15) 50%, transparent 70%)' }} />
-
-        {/* Símbolo central */}
-        <div className="absolute inset-[210px] flex items-center justify-center">
-          <span className="text-5xl lg:text-6xl text-purple-300/30 select-none font-playfair" style={{ animation:'floatSlow 10s ease-in-out infinite' }}>
-            ☽
-          </span>
-        </div>
-
-        {/* Mini estrellas en la órbita */}
-        {[0,60,120,180,240,300].map(deg => (
-          <span key={deg} className="absolute w-1 h-1 rounded-full bg-purple-300/40"
-            style={{
-              top: `calc(50% + ${Math.sin(deg * Math.PI/180) * 230}px)`,
-              left: `calc(50% + ${Math.cos(deg * Math.PI/180) * 230}px)`,
-            }} />
-        ))}
-      </div>
-
-      {/* ── Líneas de luz (rayos diagonales sutiles) ── */}
-      <div className="absolute inset-0 pointer-events-none hidden lg:block">
-        <div className="absolute top-0 left-[45%] w-px h-full opacity-5"
-          style={{ background:'linear-gradient(to bottom, transparent 0%, rgba(167,139,250,1) 40%, rgba(167,139,250,1) 60%, transparent 100%)' }} />
-        <div className="absolute top-0 left-[60%] w-px h-full opacity-3"
-          style={{ background:'linear-gradient(to bottom, transparent 0%, rgba(124,58,237,0.8) 50%, transparent 100%)' }} />
-      </div>
-
-      {/* ── Contenido ── */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 pt-28 pb-16 lg:pt-0 lg:py-0">
-        <div className="max-w-[600px] text-left">
-
-          {/* Badge */}
-          <div className="hero-title inline-flex items-center gap-2 bg-purple-700/20 border border-purple-500/30 rounded-full px-4 py-1.5 mb-7 backdrop-blur-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_6px_2px_rgba(74,222,128,0.6)]" />
-            <Sparkles size={12} className="text-purple-400" />
-            <span className="text-purple-300 text-xs font-semibold tracking-wide">+1.200 tarotistas verificados · En línea ahora</span>
-          </div>
-
-          {/* H1 */}
-          <h1 className="hero-title font-playfair text-4xl sm:text-5xl lg:text-[3.8rem] font-bold text-white leading-[1.12] mb-5 tracking-tight">
-            Los mejores tarotistas,{' '}
-            <span className="shimmer-text block sm:inline">en un solo lugar</span>
-          </h1>
-
-          {/* Subtítulo */}
-          <p className="hero-sub text-gray-400 text-base sm:text-lg leading-relaxed mb-7 max-w-lg">
-            Consultas privadas por chat o llamada con tarotistas verificados,
-            especializados en <span className="text-purple-300">amor</span>,{' '}
-            <span className="text-purple-300">trabajo</span> y{' '}
-            <span className="text-purple-300">camino de vida</span>.
-          </p>
-
-          {/* Bullets */}
-          <ul className="hero-bullets space-y-3 mb-9">
-            {[
-              { text: 'Tarotistas latinos que entienden tu realidad.', sym: '☽' },
-              { text: 'Perfiles transparentes: experiencia, reseñas y precio.', sym: '✦' },
-              { text: 'Atienden desde Argentina para todo el país y el exterior.', sym: '⋆' },
-            ].map((b, i) => (
-              <li key={i} className="flex items-center gap-3 text-gray-300 text-sm">
-                <span className="text-purple-400 text-base w-5 flex-shrink-0 text-center">{b.sym}</span>
-                {b.text}
-              </li>
-            ))}
-          </ul>
-
-          {/* CTAs */}
-          <div className="hero-cta flex flex-col sm:flex-row gap-3 flex-wrap mb-10">
-            {/* CTA principal */}
-            <div className="flex items-center">
-              <Link
-                to="/tarotistas"
-                className="bg-purple-600 hover:bg-purple-500 text-white font-semibold px-6 py-3.5 rounded-l-full text-sm transition-all duration-200 shadow-lg shadow-purple-900/50 flex items-center gap-2 hover:shadow-purple-700/40 hover:shadow-xl"
-              >
-                <Search size={14} />
-                Ver tarotistas en
-              </Link>
-              <select
-                value={pais}
-                onChange={e => setPais(e.target.value)}
-                className="bg-purple-700 hover:bg-purple-600 text-white text-sm font-semibold px-3 py-3.5 rounded-r-full border-l border-purple-400/30 outline-none cursor-pointer transition-colors appearance-none"
-              >
-                {PAISES.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
+        {/* Stats */}
+        <div className="hero-stats flex flex-wrap justify-center gap-10 sm:gap-16 pt-8 border-t border-white/8">
+          {[
+            { n:'+2.000',  label:'Lecturas realizadas'   },
+            { n:'Gratis',  label:'Vista previa'          },
+            { n:'100%',    label:'Privado y confidencial'},
+            { n:'4.9★',    label:'Valoración media'      },
+          ].map((s, i) => (
+            <div key={i} className="text-center">
+              <p className="font-playfair text-2xl sm:text-3xl font-bold text-purple-300">{s.n}</p>
+              <p className="text-gray-500 text-xs mt-1">{s.label}</p>
             </div>
-
-            {/* CTA secundario */}
-            <Link
-              to="/directoriotarot"
-              className="border border-white/15 hover:border-purple-400/50 text-white/80 hover:text-white font-medium px-6 py-3.5 rounded-full text-sm flex items-center gap-2 transition-all hover:bg-purple-900/20 backdrop-blur-sm"
-            >
-              Soy tarotista, quiero unirme
-              <ArrowRight size={13} />
-            </Link>
-          </div>
-
-          {/* Stats */}
-          <div className="hero-stats flex flex-wrap gap-7 sm:gap-10 pt-7 border-t border-white/8">
-            {[
-              { value: '1.200+', label: 'Tarotistas activos' },
-              { value: '48k+', label: 'Consultas realizadas' },
-              { value: '4.9★', label: 'Valoración media' },
-            ].map((s, i) => (
-              <div key={i}>
-                <p className="font-playfair text-2xl font-bold text-white">{s.value}</p>
-                <p className="text-gray-500 text-xs mt-0.5">{s.label}</p>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* ── Degradado inferior (transición a siguiente sección) ── */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
-        style={{ background:'linear-gradient(to top, #050511 0%, transparent 100%)' }} />
+      <div className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none"
+        style={{ background:'linear-gradient(to bottom,transparent,#030312)' }} />
     </section>
   )
 }
 
 // ── Cómo funciona ─────────────────────────────────────────────────────────────
 function ComoFunciona() {
-  const pasos = [
-    {
-      n: '01',
-      icon: <Search size={24} />,
-      titulo: 'Elegí a tu tarotista ideal',
-      desc: 'Filtrá por especialidad (amor, trabajo, llamas gemelas), método (tarot, videncia, péndulo) y precio en pesos argentinos o tu moneda local.',
-    },
-    {
-      n: '02',
-      icon: <CreditCard size={24} />,
-      titulo: 'Reservá y pagá de forma segura',
-      desc: 'Pagos online en pocos pasos. Aceptamos tarjeta, transferencia y MercadoPago. Sin llamadas a números de tarificación especial.',
-    },
-    {
-      n: '03',
-      icon: <MessageCircle size={24} />,
-      titulo: 'Conectate por chat o llamada',
-      desc: 'Recibí tu lectura en el momento o reservá para más tarde, según la disponibilidad del tarotista. 100% privado.',
-    },
-  ]
-
   return (
-    <section className="bg-[#050511] py-20 sm:py-28">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+    <section id="como-funciona" className="py-24 sm:py-32"
+      style={{ background:'radial-gradient(ellipse 80% 60% at 50% 50%, #0d0830 0%, #030312 70%)' }}>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-14">
-          <p className="text-purple-400 text-xs font-semibold tracking-widest uppercase mb-3">Simple y seguro</p>
-          <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl font-bold text-white">
-            ¿Cómo funciona?
-          </h2>
+          <p className="text-purple-400 text-xs font-semibold tracking-widest uppercase mb-3">✦ Proceso ✦</p>
+          <h2 className="font-playfair text-3xl sm:text-4xl font-bold text-white mb-3">¿Cómo funciona?</h2>
+          <p className="text-gray-500 text-sm max-w-md mx-auto">Cuatro pasos para abrir el portal de tu alma</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 relative">
-          {/* Connector line */}
-          <div className="hidden md:block absolute top-12 left-[calc(16.66%+1rem)] right-[calc(16.66%+1rem)] h-px bg-gradient-to-r from-transparent via-purple-500/30 to-transparent" />
+        <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Línea conectora desktop */}
+          <div className="hidden lg:block absolute top-10 left-[12.5%] right-[12.5%] h-px pointer-events-none"
+            style={{ background:'linear-gradient(90deg,transparent,rgba(139,92,246,.25) 20%,rgba(139,92,246,.25) 80%,transparent)' }} />
 
-          {pasos.map((p, i) => (
-            <div key={i} className="relative bg-white/3 border border-white/8 rounded-2xl p-7 hover:border-purple-500/30 transition-all group">
-              <div className="flex items-center gap-4 mb-5">
-                <div className="w-12 h-12 rounded-full bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400 group-hover:bg-purple-600/30 transition-colors flex-shrink-0">
+          {PASOS.map((p, i) => (
+            <div key={i} className="card-hover text-center group">
+              <div className="relative w-20 h-20 mx-auto mb-5">
+                <div className="absolute inset-0 rounded-full scale-[1.6] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                  style={{ background:'radial-gradient(circle,rgba(139,92,246,.18) 0%,transparent 70%)' }} />
+                <div className="w-20 h-20 rounded-full flex items-center justify-center"
+                  style={{ background:'linear-gradient(135deg,rgba(109,40,217,.28),rgba(139,92,246,.12))', border:'1px solid rgba(139,92,246,.38)' }}>
+                  <span className="font-playfair font-bold text-purple-300 text-xl">{p.n}</span>
+                </div>
+                <div className="absolute -top-1.5 -right-1.5 text-purple-400/50 text-xs"
+                  style={{ animation:`floatY 5s ease-in-out infinite`, animationDelay:`${i * 0.5}s` }}>
                   {p.icon}
                 </div>
-                <span className="font-playfair text-purple-500/50 text-4xl font-bold leading-none">{p.n}</span>
               </div>
-              <h3 className="font-playfair text-white text-xl font-semibold mb-3">{p.titulo}</h3>
+              <h3 className="text-white font-semibold mb-2">{p.titulo}</h3>
               <p className="text-gray-400 text-sm leading-relaxed">{p.desc}</p>
             </div>
           ))}
         </div>
 
-        <p className="text-center text-gray-500 text-sm mt-8 flex items-center justify-center gap-2">
-          <MapPin size={14} className="text-purple-400" />
-          Funciona estés en Buenos Aires, Córdoba, Rosario, Mendoza o cualquier provincia.
-        </p>
-      </div>
-    </section>
-  )
-}
-
-// ── Tarotistas destacados ─────────────────────────────────────────────────────
-function TarotistasDestacados() {
-  const [top, setTop] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    supabase
-      .from('tarotistas')
-      .select('*')
-      .eq('estado', 'online')
-      .eq('activo', true)
-      .order('rating', { ascending: false })
-      .limit(4)
-      .then(({ data }) => {
-        if (data) setTop(data.map(t => ({
-          ...t,
-          id: t.slug,
-          reseñas: t['reseñas_count'],
-          lecturas: t.lecturas_count,
-          precioPorMinuto: t.precio_por_minuto,
-          precioChat: t.precio_chat,
-          precioLlamada: t.precio_llamada,
-          foto: t.foto_url,
-        })))
-        setLoading(false)
-      })
-  }, [])
-
-  return (
-    <section className="bg-[#050511] py-20 sm:py-24">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
-          <div>
-            <p className="text-purple-400 text-xs font-semibold tracking-widest uppercase mb-3">En línea ahora</p>
-            <h2 className="font-playfair text-3xl sm:text-4xl font-bold text-white">
-              Tarotistas disponibles ahora
-            </h2>
-          </div>
-          <Link
-            to="/tarotistas"
-            className="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 text-sm font-semibold transition-colors whitespace-nowrap"
-          >
-            Ver todos <ArrowRight size={14} />
+        <div className="text-center mt-12">
+          <Link to="/registros-akasicos"
+            className="btn-glow inline-flex items-center gap-2 text-white font-semibold px-8 py-3.5 rounded-full"
+            style={{ background:'linear-gradient(135deg,#6d28d9,#9333ea)', boxShadow:'0 0 20px rgba(139,92,246,.35)' }}>
+            <Sparkles size={16} /> Comenzar ahora — gratis
           </Link>
         </div>
-
-        {loading ? (
-          <div className="flex justify-center py-16">
-            <Loader2 size={32} className="text-purple-400 animate-spin" />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {top.map(t => <TarotistCard key={t.id} t={t} />)}
-          </div>
-        )}
       </div>
     </section>
   )
 }
 
-// ── Por qué elegirnos ─────────────────────────────────────────────────────────
-function PorQue() {
-  const items = [
-    {
-      icon: <Shield size={22} />,
-      titulo: 'Solo tarotistas verificados',
-      desc: 'Cada profesional pasa un proceso de verificación y es evaluado continuamente por la comunidad.',
-    },
-    {
-      icon: <Search size={22} />,
-      titulo: 'Perfiles 100% transparentes',
-      desc: 'Ves experiencia, reseñas reales y precios antes de decidir. Sin sorpresas.',
-    },
-    {
-      icon: <Heart size={22} />,
-      titulo: 'Lecturas éticas y responsables',
-      desc: 'Sin temas de salud, embarazo ni cuestiones legales. Orientación espiritual responsable.',
-    },
-    {
-      icon: <MapPin size={22} />,
-      titulo: 'Pensado para vos',
-      desc: 'Plataforma diseñada para usuarios latinos. Precios en tu moneda, tarotistas que entienden tu cultura.',
-    },
-  ]
-
+// ── Qué incluye ───────────────────────────────────────────────────────────────
+function QueIncluye() {
   return (
-    <section
-      className="py-20 sm:py-28 relative overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #0D0B2B 0%, #050511 100%)' }}
-    >
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+    <section className="py-24 sm:py-28" style={{ background:'#030312' }}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-14">
-          <p className="text-purple-400 text-xs font-semibold tracking-widest uppercase mb-3">Nuestra diferencia</p>
-          <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl font-bold text-white">
-            ¿Por qué este directorio de tarot?
-          </h2>
+          <p className="text-purple-400 text-xs font-semibold tracking-widest uppercase mb-3">✴ Contenido ✴</p>
+          <h2 className="font-playfair text-3xl sm:text-4xl font-bold text-white mb-3">¿Qué incluye tu Registro?</h2>
+          <p className="text-gray-500 text-sm max-w-md mx-auto">La lectura completa cubre todos los aspectos de tu camino del alma</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {items.map((item, i) => (
-            <div
-              key={i}
-              className="bg-white/3 border border-white/8 rounded-2xl p-7 hover:border-purple-500/25 hover:bg-purple-900/8 transition-all group"
-            >
-              <div className="w-11 h-11 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400 mb-5 group-hover:bg-purple-600/30 transition-colors">
-                {item.icon}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+          {QUE_INCLUYE.map((q, i) => (
+            <div key={i}
+              className="card-hover group relative rounded-2xl p-6 overflow-hidden"
+              style={{ background:'rgba(255,255,255,.02)', border:'1px solid rgba(255,255,255,.07)' }}>
+              <div className="absolute top-0 left-0 right-0 h-px top-line opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+                style={{ background:'radial-gradient(ellipse 80% 60% at 50% 0%,rgba(109,40,217,.08) 0%,transparent 70%)' }} />
+              <div className="relative">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-purple-400 mb-4 group-hover:text-purple-300 transition-colors"
+                  style={{ background:'linear-gradient(135deg,rgba(109,40,217,.22),rgba(139,92,246,.1))', border:'1px solid rgba(139,92,246,.28)' }}>
+                  {q.icon}
+                </div>
+                <h3 className="text-white font-semibold mb-2">{q.titulo}</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">{q.desc}</p>
               </div>
-              <h3 className="text-white font-semibold mb-2 leading-snug">{item.titulo}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{item.desc}</p>
             </div>
           ))}
         </div>
-      </div>
-    </section>
-  )
-}
 
-// ── Soy tarotista ─────────────────────────────────────────────────────────────
-function SoyTarotista() {
-  return (
-    <section className="bg-[#050511] py-20 sm:py-24">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div
-          className="relative rounded-3xl overflow-hidden p-8 sm:p-12 lg:p-16"
-          style={{
-            background: 'radial-gradient(ellipse 80% 100% at 30% 50%, rgba(124,58,237,0.2) 0%, transparent 60%), linear-gradient(135deg, #130F40 0%, #0D0B2B 100%)',
-            border: '1px solid rgba(124,58,237,0.2)',
-          }}
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-            <div>
-              <p className="text-purple-400 text-xs font-semibold tracking-widest uppercase mb-4">Para profesionales</p>
-              <h2 className="font-playfair text-3xl sm:text-4xl font-bold text-white mb-5 leading-tight">
-                ¿Sos tarotista? Sumate y conseguí más consultantes
-              </h2>
-              <p className="text-gray-400 leading-relaxed mb-8">
-                Llegá a miles de personas en Argentina, Chile, México y toda la comunidad latina del mundo.
-                Elegís el modelo que mejor se adapta a tu forma de trabajar.
-              </p>
-              <ul className="space-y-3 mb-8">
-                {[
-                  'Tu propia página de perfil con URL única y posicionada',
-                  'Herramientas de reputación: reseñas verificadas automáticamente',
-                  'Soporte completo para cobros y facturación',
-                  'Visibilidad ante consultantes de toda Latinoamérica',
-                ].map((b, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-gray-300 text-sm">
-                    <CheckCircle size={15} className="text-purple-400 flex-shrink-0 mt-0.5" />
-                    {b}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                to="/directoriotarot"
-                className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold px-8 py-3.5 rounded-full transition-colors shadow-lg shadow-purple-900/40"
-              >
-                Quiero registrarme como tarotista
-                <ArrowRight size={16} />
-              </Link>
+        {/* Preview vs Completo */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-3xl mx-auto">
+          <div className="rounded-2xl p-6"
+            style={{ background:'rgba(255,255,255,.02)', border:'1px solid rgba(255,255,255,.07)' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <Star size={16} className="text-yellow-400 fill-yellow-400" />
+              <span className="text-yellow-400 text-sm font-semibold">Vista previa — Gratis</span>
             </div>
-
-            {/* Pricing cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                <p className="text-purple-300 text-xs font-bold uppercase tracking-widest mb-3">Opción 1</p>
-                <h4 className="text-white font-semibold text-lg mb-2">Suscripción mensual</h4>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  Aparecé destacado en el directorio. Sin comisión por cliente. Pagás una tarifa fija mensual y te quedás con el 100% de tus ingresos.
-                </p>
-                <div className="mt-4 pt-4 border-t border-white/8">
-                  <p className="text-white font-bold text-xl">$XX<span className="text-gray-400 font-normal text-sm">/mes</span></p>
-                </div>
-              </div>
-              <div className="bg-purple-700/15 border border-purple-500/25 rounded-2xl p-6">
-                <p className="text-purple-300 text-xs font-bold uppercase tracking-widest mb-3">Opción 2</p>
-                <h4 className="text-white font-semibold text-lg mb-2">Sin costo fijo</h4>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  Sin suscripción. Pagás solo una comisión por cada lectura realizada. Ideal para empezar sin riesgo.
-                </p>
-                <div className="mt-4 pt-4 border-t border-purple-500/20">
-                  <p className="text-white font-bold text-xl">XX%<span className="text-gray-400 font-normal text-sm"> comisión</span></p>
-                </div>
-              </div>
+            <ul className="space-y-2">
+              {['Introducción a tu energía akáshica','Primera impresión de tu alma','Destello de tu misión de vida'].map(i => (
+                <li key={i} className="flex items-center gap-2 text-sm text-gray-300">
+                  <CheckCircle size={13} className="text-yellow-400 flex-shrink-0" />{i}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-2xl p-6"
+            style={{ background:'linear-gradient(135deg,rgba(109,40,217,.15),rgba(139,92,246,.07))', border:'1px solid rgba(139,92,246,.32)' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <Lock size={16} className="text-purple-400" />
+              <span className="text-purple-300 text-sm font-semibold">Lectura completa — Pago único</span>
             </div>
+            <ul className="space-y-2">
+              {['Origen y misión del alma','Patrones kármicos y bloqueos','Respuesta a tu pregunta específica','Mensaje de tus Guardianes Akáshicos'].map(i => (
+                <li key={i} className="flex items-center gap-2 text-sm text-gray-300">
+                  <CheckCircle size={13} className="text-purple-400 flex-shrink-0" />{i}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>
@@ -520,28 +312,95 @@ function SoyTarotista() {
   )
 }
 
-// ── Confianza ─────────────────────────────────────────────────────────────────
-function Confianza() {
+// ── Temas de consulta ─────────────────────────────────────────────────────────
+function TemasConsulta() {
   return (
-    <section className="bg-[#050511] py-10 border-y border-white/5">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-          {[
-            { icon: <Lock size={20} />, titulo: 'Privacidad total', desc: 'Tus consultas son 100% confidenciales. Nunca compartimos tus datos personales.' },
-            { icon: <Shield size={20} />, titulo: 'Lecturas responsables', desc: 'El tarot es orientación espiritual. No reemplaza a médicos, abogados ni psicólogos.' },
-            { icon: <Heart size={20} />, titulo: 'Decisiones conscientes', desc: 'Fomentamos el uso del tarot para el autoconocimiento, no la dependencia.' },
-          ].map((c, i) => (
-            <div key={i} className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-purple-600/15 border border-purple-500/25 flex items-center justify-center text-purple-400">
-                {c.icon}
+    <section className="py-24 sm:py-28"
+      style={{ background:'radial-gradient(ellipse 70% 60% at 50% 50%, #0d0830 0%, #030312 65%)' }}>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-12">
+          <p className="text-purple-400 text-xs font-semibold tracking-widest uppercase mb-3">☽ Temas ☽</p>
+          <h2 className="font-playfair text-3xl sm:text-4xl font-bold text-white mb-3">¿Sobre qué podés consultar?</h2>
+          <p className="text-gray-500 text-sm">Los Registros Akáshicos responden cualquier pregunta del alma</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+          {PREGUNTAS.map((p, i) => (
+            <Link key={i} to="/registros-akasicos"
+              className="card-hover group rounded-2xl p-5 text-left transition-all"
+              style={{ background:'rgba(255,255,255,.02)', border:'1px solid rgba(255,255,255,.07)' }}>
+              <div className="text-2xl mb-3">{p.emoji}</div>
+              <p className="text-white text-sm font-semibold mb-1.5">{p.tema}</p>
+              <p className="text-gray-500 text-xs leading-relaxed italic">"{p.ej}"</p>
+              <div className="mt-3 flex items-center gap-1 text-purple-400/60 text-xs group-hover:text-purple-300 transition-colors">
+                Consultar <ArrowRight size={11} />
               </div>
-              <div>
-                <p className="text-white font-semibold text-sm mb-1">{c.titulo}</p>
-                <p className="text-gray-500 text-xs leading-relaxed">{c.desc}</p>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── Testimonios ───────────────────────────────────────────────────────────────
+function Testimonios() {
+  return (
+    <section className="py-24 sm:py-28" style={{ background:'#030312' }}>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-12">
+          <p className="text-purple-400 text-xs font-semibold tracking-widest uppercase mb-3">✦ Testimonios ✦</p>
+          <h2 className="font-playfair text-3xl sm:text-4xl font-bold text-white">Lo que dicen quienes ya consultaron</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {TESTIMONIOS.map((t, i) => (
+            <div key={i} className="card-hover rounded-2xl p-6"
+              style={{ background:'rgba(255,255,255,.02)', border:'1px solid rgba(255,255,255,.07)' }}>
+              <div className="flex gap-0.5 mb-3">
+                {Array.from({length:t.stars}).map((_,j) => (
+                  <Star key={j} size={13} className="text-yellow-400 fill-yellow-400" />
+                ))}
+              </div>
+              <p className="text-gray-300 text-sm leading-relaxed mb-5 italic">"{t.texto}"</p>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-purple-300"
+                  style={{ background:'rgba(109,40,217,.25)' }}>
+                  {t.nombre.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-white text-xs font-semibold">{t.nombre}</p>
+                  <p className="text-gray-500 text-xs">{t.pais}</p>
+                </div>
               </div>
             </div>
           ))}
         </div>
+      </div>
+    </section>
+  )
+}
+
+// ── CTA central ───────────────────────────────────────────────────────────────
+function CTACentral() {
+  return (
+    <section className="py-20 sm:py-24"
+      style={{ background:'radial-gradient(ellipse 80% 100% at 50% 50%, #140e40 0%, #030312 65%)' }}>
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 text-center">
+        <div className="text-purple-400/60 text-2xl mb-5 tracking-[.6em]"
+          style={{ animation:'floatY 5s ease-in-out infinite' }}>✦ ☽ ✦</div>
+        <h2 className="font-playfair text-3xl sm:text-4xl font-bold text-white mb-4">
+          Tu alma tiene algo<br />
+          <span className="grad-text">importante que decirte</span>
+        </h2>
+        <p className="text-gray-400 leading-relaxed mb-8">
+          Cada día que pasa sin conocer tu misión, tus bloqueos kármicos siguen actuando sin que lo sepas.
+          Los Registros Akáshicos te dan las respuestas que buscabas.
+        </p>
+        <Link to="/registros-akasicos"
+          className="btn-glow inline-flex items-center gap-2.5 text-white font-bold px-10 py-4 rounded-full text-base"
+          style={{ background:'linear-gradient(135deg,#6d28d9,#9333ea)', boxShadow:'0 0 28px rgba(139,92,246,.4)' }}>
+          <Sparkles size={18} /> Abrir mis Registros Akáshicos
+        </Link>
+        <p className="text-gray-600 text-xs mt-4">Vista previa gratuita · Sin registro previo</p>
       </div>
     </section>
   )
@@ -550,38 +409,28 @@ function Confianza() {
 // ── FAQs ──────────────────────────────────────────────────────────────────────
 function FAQs() {
   const [open, setOpen] = useState(null)
-
   return (
-    <section className="bg-[#050511] py-20 sm:py-24">
+    <section className="py-20 sm:py-24" style={{ background:'#030312' }}>
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-12">
           <p className="text-purple-400 text-xs font-semibold tracking-widest uppercase mb-3">Preguntas frecuentes</p>
-          <h2 className="font-playfair text-3xl sm:text-4xl font-bold text-white">
-            Todo lo que necesitás saber
-          </h2>
+          <h2 className="font-playfair text-3xl sm:text-4xl font-bold text-white">Todo lo que necesitás saber</h2>
         </div>
-
         <div className="space-y-3">
-          {FAQS.map((faq, i) => (
-            <div
-              key={i}
-              className={`border rounded-xl overflow-hidden transition-all duration-200 ${
-                open === i ? 'border-purple-500/40 bg-purple-900/10' : 'border-white/8 bg-white/3'
-              }`}
-            >
-              <button
-                className="w-full flex items-center justify-between gap-4 p-5 text-left"
-                onClick={() => setOpen(open === i ? null : i)}
-              >
-                <span className="text-white font-medium text-sm">{faq.pregunta}</span>
+          {FAQS.map((f, i) => (
+            <div key={i} className={`border rounded-xl overflow-hidden transition-all duration-200 ${
+              open === i ? 'border-purple-500/40' : 'border-white/8'}`}
+              style={{ background: open === i ? 'rgba(109,40,217,.08)' : 'rgba(255,255,255,.02)' }}>
+              <button className="w-full flex items-center justify-between gap-4 p-5 text-left"
+                onClick={() => setOpen(open === i ? null : i)}>
+                <span className="text-white font-medium text-sm">{f.p}</span>
                 {open === i
-                  ? <ChevronUp size={16} className="text-purple-400 flex-shrink-0" />
-                  : <ChevronDown size={16} className="text-gray-500 flex-shrink-0" />
-                }
+                  ? <ChevronUp size={15} className="text-purple-400 flex-shrink-0" />
+                  : <ChevronDown size={15} className="text-gray-500 flex-shrink-0" />}
               </button>
               {open === i && (
                 <div className="px-5 pb-5">
-                  <p className="text-gray-400 text-sm leading-relaxed">{faq.respuesta}</p>
+                  <p className="text-gray-400 text-sm leading-relaxed">{f.r}</p>
                 </div>
               )}
             </div>
@@ -592,18 +441,19 @@ function FAQs() {
   )
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// ── Página ────────────────────────────────────────────────────────────────────
 export default function Home() {
   return (
-    <div className="bg-[#050511]">
+    <div style={{ background:'#030312' }}>
+      <style>{GLOBAL_STYLES}</style>
       <Header />
       <main>
         <Hero />
         <ComoFunciona />
-        <TarotistasDestacados />
-        <PorQue />
-        <SoyTarotista />
-        <Confianza />
+        <QueIncluye />
+        <TemasConsulta />
+        <Testimonios />
+        <CTACentral />
         <FAQs />
       </main>
       <Footer />
