@@ -12,6 +12,41 @@ export default function PagoExitoso() {
     return () => clearInterval(t)
   }, [])
 
+  // ── Evento de compra para GTM ─────────────────────────────────────────────
+  useEffect(() => {
+    const params      = new URLSearchParams(window.location.search)
+    const session_id  = params.get('session_id') || ''
+    const value       = parseFloat(params.get('value') || '0')
+    const currency    = (params.get('currency') || 'EUR').toUpperCase()
+    const email       = params.get('email') || ''
+    const phone       = params.get('phone') || ''
+
+    if (!session_id) return   // no disparar si no hay sesión válida
+
+    window.dataLayer = window.dataLayer || []
+    window.dataLayer.push({ ecommerce: null })   // limpiar objeto anterior
+    window.dataLayer.push({
+      event:          'purchase',
+      ecommerce: {
+        transaction_id: session_id,
+        value,
+        currency,
+        items: [
+          {
+            item_id:   'registros-akasicos',
+            item_name: 'Lectura de Registros Akáshicos Completa',
+            price:     value,
+            quantity:  1,
+          },
+        ],
+      },
+      user_data: {
+        email_address: email,
+        phone_number:  phone,
+      },
+    })
+  }, [])
+
   return (
     <div style={{ background:'#030312', minHeight:'100vh' }}>
       <style>{`
