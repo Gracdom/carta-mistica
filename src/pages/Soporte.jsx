@@ -115,12 +115,25 @@ export default function Soporte() {
   const [enviado, setEnviado] = useState(false)
   const [enviando, setEnviando] = useState(false)
 
+  const [error, setError] = useState('')
+
   const handleSubmit = async e => {
     e.preventDefault()
     setEnviando(true)
-    await new Promise(r => setTimeout(r, 1200))
-    setEnviado(true)
-    setEnviando(false)
+    setError('')
+    try {
+      const res = await fetch('/.netlify/functions/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) throw new Error()
+      setEnviado(true)
+    } catch {
+      setError('Hubo un problema al enviar el mensaje. Intentá de nuevo o escribinos a info@cartamistica.com.')
+    } finally {
+      setEnviando(false)
+    }
   }
 
   return (
@@ -304,6 +317,12 @@ export default function Soporte() {
                     className="w-full bg-white/5 border border-white/10 focus:border-purple-500/50 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 outline-none transition-colors resize-none"
                   />
                 </div>
+
+                {error && (
+                  <p className="text-red-400 text-sm bg-red-900/20 border border-red-500/20 rounded-xl px-4 py-3">
+                    {error}
+                  </p>
+                )}
 
                 <button
                   type="submit"
