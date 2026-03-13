@@ -8,6 +8,13 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Blog from './pages/Blog'
 import Soporte from './pages/Soporte'
+import AdminGuard from './pages/admin/AdminGuard'
+import AdminLayout from './pages/admin/AdminLayout'
+import Dashboard from './pages/admin/Dashboard'
+import AdminTarotistas from './pages/admin/AdminTarotistas'
+import AdminTarotistasForm from './pages/admin/AdminTarotistasForm'
+import AdminSolicitudes from './pages/admin/AdminSolicitudes'
+import AdminResenas from './pages/admin/AdminResenas'
 import { AuthProvider } from './context/AuthContext'
 import './App.css'
 
@@ -49,6 +56,14 @@ export default function App() {
           <Route path="/registro" element={<Register />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/soporte" element={<Soporte />} />
+          <Route path="/admin" element={<AdminGuard><AdminLayout /></AdminGuard>}>
+            <Route index element={<Dashboard />} />
+            <Route path="tarotistas" element={<AdminTarotistas />} />
+            <Route path="tarotistas/nuevo" element={<AdminTarotistasForm />} />
+            <Route path="tarotistas/:id" element={<AdminTarotistasForm />} />
+            <Route path="solicitudes" element={<AdminSolicitudes />} />
+            <Route path="resenas" element={<AdminResenas />} />
+          </Route>
         </Routes>
 
       {/* Botón flotante de WhatsApp */}
