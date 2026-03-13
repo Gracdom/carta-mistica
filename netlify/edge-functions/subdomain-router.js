@@ -1,50 +1,26 @@
 /**
  * Netlify Edge Function — Subdomain Router
  *
- * Detecta el subdominio "directoriotarot" y hace un rewrite interno
- * a /directoriotarot, manteniendo la URL del subdominio en el browser.
- *
- * Producción : directoriotarot.cartamistica.com  → /directoriotarot
- * Desarrollo  : directoriotarot.localhost         → /directoriotarot
+ * Para el subdominio "directoriotarot.*", sirve el index.html del SPA.
+ * La detección de qué componente mostrar la hace React en App.jsx
+ * leyendo window.location.hostname directamente en el browser.
  */
 export default async function handler(request, context) {
   const url = new URL(request.url)
-  const hostname = url.hostname
-
-  // Extrae el primer segmento del hostname (el subdominio)
-  const parts = hostname.split('.')
-  const subdomain = parts.length >= 2 ? parts[0] : null
+  const subdomain = url.hostname.split('.')[0]
 
   if (subdomain === 'directoriotarot') {
-    // Solo reescribe si aún no está en la ruta correcta
-    if (!url.pathname.startsWith('/directoriotarot')) {
-      url.pathname = '/directoriotarot'
-      return context.rewrite(url.toString())
-    }
+    // Sirve el index.html del SPA sin cambiar la URL del browser.
+    // React detecta el subdominio y renderiza DirectorioTarot.
+    const rewriteUrl = new URL(url)
+    rewriteUrl.pathname = '/'
+    return context.rewrite(rewriteUrl.toString())
   }
 
   return context.next()
 }
 
 export const config = {
-  // Se ejecuta en todas las rutas excepto assets estáticos y API
   path: '/*',
-  excludedPath: [
-    '/_next/*',
-    '/static/*',
-    '*.ico',
-    '*.png',
-    '*.jpg',
-    '*.jpeg',
-    '*.svg',
-    '*.webp',
-    '*.gif',
-    '*.css',
-    '*.js',
-    '*.woff',
-    '*.woff2',
-    '*.ttf',
-    '*.map',
-    '/assets/*',
-  ],
+  excludedPath: ['/assets/*', '*.ico', '*.png', '*.jpg', '*.svg', '*.webp', '*.css', '*.js', '*.woff', '*.woff2', '*.map'],
 }
