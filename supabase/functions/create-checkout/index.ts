@@ -39,14 +39,18 @@ Deno.serve(async (req) => {
       payment_method_types: ['card'],
       mode: 'payment',
       customer_email: email,
+      payment_intent_data: {
+        description:          'Carta Mistica - Consulta',
+        statement_descriptor: 'CARTA MISTICA',
+      },
       line_items: [
         {
           price_data: {
             currency: moneda,
             unit_amount: preciocentavos,
             product_data: {
-              name: 'Lectura de Registros Akáshicos Completa',
-              description: `Lectura completa personalizada para ${nombre}`,
+              name:        'Carta Mística — Registros Akáshicos',
+              description: `Lectura completa de Registros Akáshicos para ${nombre}`,
             },
           },
           quantity: 1,
