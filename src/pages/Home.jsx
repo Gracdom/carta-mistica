@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Sparkles, BookOpen, Lock, Star, ChevronDown, ChevronUp,
   ArrowRight, Shield, Heart, Eye, Zap, Moon, CheckCircle
