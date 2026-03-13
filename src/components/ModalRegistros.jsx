@@ -259,8 +259,50 @@ export default function ModalRegistros({ onClose }) {
     return true
   }
 
-  const siguiente = () => {
+  // Guarda o actualiza la consulta en Supabase con los datos disponibles hasta el paso actual
+  const guardarParcial = async (formActual, idActual) => {
+    try {
+      if (!idActual) {
+        // Primera vez: INSERT con los datos mínimos (nombre ya validado)
+        const { data, error: dbErr } = await supabase
+          .from('consultas_akasicas')
+          .insert({
+            nombre:           formActual.nombre,
+            fecha_nacimiento: formActual.fechaNacimiento || null,
+            lugar_nacimiento: formActual.lugar || null,
+            email:            formActual.email || null,
+            intenciones:      formActual.intenciones,
+            estado:           'incompleto',
+          })
+          .select('id').single()
+        if (dbErr) { console.error('DB insert:', dbErr); return null }
+        return data?.id ?? null
+      } else {
+        // Siguientes pasos: UPDATE
+        await supabase
+          .from('consultas_akasicas')
+          .update({
+            fecha_nacimiento: formActual.fechaNacimiento || null,
+            lugar_nacimiento: formActual.lugar || null,
+            email:            formActual.email || null,
+            intenciones:      formActual.intenciones,
+          })
+          .eq('id', idActual)
+        return idActual
+      }
+    } catch (e) {
+      console.error('guardarParcial error:', e)
+      return idActual
+    }
+  }
+
+  const siguiente = async () => {
     if (!validar()) return
+    // Guardar en BD al avanzar desde paso 0 (tenemos nombre) en adelante
+    if (paso >= 0) {
+      const nuevoId = await guardarParcial(form, consultaId)
+      if (nuevoId && !consultaId) setConsultaId(nuevoId)
+    }
     if (paso < TOTAL_PASOS - 1) { irA(paso + 1) }
     else { handleSubmit() }
   }
@@ -269,18 +311,23 @@ export default function ModalRegistros({ onClose }) {
     setEstado('analyzing')
     setError('')
     try {
-      const { data: consulta, error: dbErr } = await supabase
-        .from('consultas_akasicas')
-        .insert({ nombre: form.nombre, fecha_nacimiento: form.fechaNacimiento, lugar_nacimiento: form.lugar||null, intenciones: form.intenciones, email: form.email, estado: 'pendiente' })
-        .select('id').single()
-      if (dbErr) console.error('DB:', dbErr)
-      const id = consulta?.id
-      setConsultaId(id)
+      // Actualizar registro existente con estado 'pendiente' e intenciones finales
+      const id = consultaId
+      if (id) {
+        await supabase
+          .from('consultas_akasicas')
+          .update({ intenciones: form.intenciones, estado: 'pendiente' })
+          .eq('id', id)
+      }
       const { data, error: fnErr } = await supabase.functions.invoke('akasicos', {
         body: { nombre: form.nombre, fechaNacimiento: form.fechaNacimiento, lugar: form.lugar, pregunta: form.intenciones.join(', ') },
       })
       if (fnErr || data?.error) throw new Error(data?.error || fnErr?.message || 'Error al consultar los registros.')
-      if (id) await supabase.from('consultas_akasicas').update({ lectura_teaser: data.teaser, lectura_completa: data.completa, estado: 'preview' }).eq('id', id)
+      if (id) {
+        await supabase.from('consultas_akasicas')
+          .update({ lectura_teaser: data.teaser, lectura_completa: data.completa, estado: 'preview' })
+          .eq('id', id)
+      }
       setTeaser(data.teaser)
       setEstado('preview')
     } catch (err) {
