@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import Home from './pages/Home'
 import Tarotistas from './pages/Tarotistas'
 import Perfil from './pages/Perfil'
@@ -10,6 +11,14 @@ import Soporte from './pages/Soporte'
 import { AuthProvider } from './context/AuthContext'
 import './App.css'
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+  return null
+}
+
 const subdomain = window.location.hostname.split('.')[0]
 const isDirectorioSubdomain = subdomain === 'directoriotarot'
 
@@ -18,6 +27,7 @@ export default function App() {
     return (
       <AuthProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             <Route path="*" element={<DirectorioTarot />} />
           </Routes>
@@ -29,6 +39,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/tarotistas" element={<Tarotistas />} />
