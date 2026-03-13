@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import {
   Sparkles, BookOpen, Lock, Star, ChevronDown, ChevronUp,
   ArrowRight, Shield, Heart, Eye, Zap, Moon, CheckCircle
 } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import ModalRegistros from '../components/ModalRegistros'
 
 // ── Datos estáticos ───────────────────────────────────────────────────────────
 const STARS_BG = Array.from({ length: 65 }, (_, i) => ({
@@ -97,7 +97,7 @@ const GLOBAL_STYLES = `
 `
 
 // ── Hero ──────────────────────────────────────────────────────────────────────
-function Hero() {
+function Hero({ onOpenModal }) {
   return (
     <section className="relative min-h-[92vh] flex flex-col items-center justify-center overflow-hidden text-center px-4"
       style={{ background:'radial-gradient(ellipse 90% 75% at 50% -5%, #180f45 0%, #030312 65%)' }}>
@@ -163,11 +163,11 @@ function Hero() {
 
         {/* CTA */}
         <div className="hero-cta flex flex-col sm:flex-row items-center justify-center gap-4 mb-14">
-          <Link to="/registros-akasicos"
-            className="btn-glow inline-flex items-center gap-2.5 text-white font-bold px-10 py-4 rounded-full text-base"
+          <button onClick={onOpenModal}
+            className="btn-glow inline-flex items-center gap-2.5 text-white font-bold px-10 py-4 rounded-full text-base cursor-pointer"
             style={{ background:'linear-gradient(135deg,#6d28d9,#9333ea)', boxShadow:'0 0 28px rgba(139,92,246,.4)' }}>
             <Sparkles size={18} /> Consultar mis Registros
-          </Link>
+          </button>
           <a href="#como-funciona"
             className="inline-flex items-center gap-2 text-gray-400 hover:text-white text-sm font-medium transition-colors border border-white/10 hover:border-white/20 px-6 py-4 rounded-full">
             Ver cómo funciona <ArrowRight size={14} />
@@ -380,7 +380,7 @@ function Testimonios() {
 }
 
 // ── CTA central ───────────────────────────────────────────────────────────────
-function CTACentral() {
+function CTACentral({ onOpenModal }) {
   return (
     <section className="py-20 sm:py-24"
       style={{ background:'radial-gradient(ellipse 80% 100% at 50% 50%, #140e40 0%, #030312 65%)' }}>
@@ -395,11 +395,11 @@ function CTACentral() {
           Cada día que pasa sin conocer tu misión, tus bloqueos kármicos siguen actuando sin que lo sepas.
           Los Registros Akáshicos te dan las respuestas que buscabas.
         </p>
-        <Link to="/registros-akasicos"
-          className="btn-glow inline-flex items-center gap-2.5 text-white font-bold px-10 py-4 rounded-full text-base"
+        <button onClick={onOpenModal}
+          className="btn-glow inline-flex items-center gap-2.5 text-white font-bold px-10 py-4 rounded-full text-base cursor-pointer"
           style={{ background:'linear-gradient(135deg,#6d28d9,#9333ea)', boxShadow:'0 0 28px rgba(139,92,246,.4)' }}>
           <Sparkles size={18} /> Abrir mis Registros Akáshicos
-        </Link>
+        </button>
         <p className="text-gray-600 text-xs mt-4">Vista previa gratuita · Sin registro previo</p>
       </div>
     </section>
@@ -443,20 +443,24 @@ function FAQs() {
 
 // ── Página ────────────────────────────────────────────────────────────────────
 export default function Home() {
+  const [showModal, setShowModal] = useState(false)
+  const openModal = () => setShowModal(true)
+
   return (
     <div style={{ background:'#030312' }}>
       <style>{GLOBAL_STYLES}</style>
       <Header />
       <main>
-        <Hero />
+        <Hero onOpenModal={openModal} />
         <ComoFunciona />
         <QueIncluye />
         <TemasConsulta />
         <Testimonios />
-        <CTACentral />
+        <CTACentral onOpenModal={openModal} />
         <FAQs />
       </main>
       <Footer />
+      {showModal && <ModalRegistros onClose={() => setShowModal(false)} />}
     </div>
   )
 }
