@@ -17,6 +17,7 @@ import AdminTarotistas from './pages/admin/AdminTarotistas'
 import AdminTarotistasForm from './pages/admin/AdminTarotistasForm'
 import AdminSolicitudes from './pages/admin/AdminSolicitudes'
 import AdminResenas from './pages/admin/AdminResenas'
+import AdminConsultas from './pages/admin/AdminConsultas'
 import { AuthProvider } from './context/AuthContext'
 import './App.css'
 
@@ -65,6 +66,7 @@ export default function App() {
             <Route path="tarotistas" element={<AdminTarotistas />} />
             <Route path="tarotistas/nuevo" element={<AdminTarotistasForm />} />
             <Route path="tarotistas/:id" element={<AdminTarotistasForm />} />
+            <Route path="consultas" element={<AdminConsultas />} />
             <Route path="solicitudes" element={<AdminSolicitudes />} />
             <Route path="resenas" element={<AdminResenas />} />
           </Route>
