@@ -3,37 +3,42 @@ import Home from './pages/Home'
 import Tarotistas from './pages/Tarotistas'
 import Perfil from './pages/Perfil'
 import DirectorioTarot from './pages/DirectorioTarot'
+import Login from './pages/Login'
+import Register from './pages/Register'
 import Blog from './pages/Blog'
 import Soporte from './pages/Soporte'
+import { AuthProvider } from './context/AuthContext'
 import './App.css'
 
-// Detecta si la app está corriendo en el subdominio "directoriotarot"
 const subdomain = window.location.hostname.split('.')[0]
 const isDirectorioSubdomain = subdomain === 'directoriotarot'
 
 export default function App() {
-  // Si el hostname es directoriotarot.*, renderiza directamente el componente.
-  // React Router solo sirve para la navegación interna del sitio principal.
   if (isDirectorioSubdomain) {
     return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="*" element={<DirectorioTarot />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="*" element={<DirectorioTarot />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     )
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/tarotistas" element={<Tarotistas />} />
-        <Route path="/tarotistas/:id" element={<Perfil />} />
-        <Route path="/directoriotarot" element={<DirectorioTarot />} />
-        <Route path="/blog" element={<Blog />} />
-        <Route path="/soporte" element={<Soporte />} />
-      </Routes>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/tarotistas" element={<Tarotistas />} />
+          <Route path="/tarotistas/:id" element={<Perfil />} />
+          <Route path="/directoriotarot" element={<DirectorioTarot />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/registro" element={<Register />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/soporte" element={<Soporte />} />
+        </Routes>
 
       {/* Botón flotante de WhatsApp */}
       <a
@@ -48,5 +53,6 @@ export default function App() {
         </svg>
       </a>
     </BrowserRouter>
+    </AuthProvider>
   )
 }

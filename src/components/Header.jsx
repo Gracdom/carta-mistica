@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { Menu, X } from 'lucide-react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Menu, X, LogOut, User } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 const NAV = [
   { label: 'Inicio', to: '/' },
@@ -12,6 +13,13 @@ const NAV = [
 export default function Header() {
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
+  const { user, signOut } = useAuth()
+  const navigate = useNavigate()
+
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/')
+  }
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
@@ -46,15 +54,32 @@ export default function Header() {
 
         {/* CTAs desktop */}
         <div className="hidden md:flex items-center gap-3 flex-shrink-0">
-          <a href="#" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
-            Iniciar sesión
-          </a>
-          <Link
-            to="/directoriotarot"
-            className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold px-4 py-2 rounded-full transition-colors shadow-md shadow-purple-900/40"
-          >
-            Registrarme
-          </Link>
+          {user ? (
+            <>
+              <div className="flex items-center gap-1.5 text-gray-400 text-sm">
+                <User size={14} className="text-purple-400" />
+                <span className="max-w-[140px] truncate">{user.email}</span>
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm font-medium transition-colors"
+              >
+                <LogOut size={14} /> Salir
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
+                Iniciar sesión
+              </Link>
+              <Link
+                to="/registro"
+                className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold px-4 py-2 rounded-full transition-colors shadow-md shadow-purple-900/40"
+              >
+                Registrarme
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -88,14 +113,33 @@ export default function Header() {
             </Link>
           ))}
           <div className="border-t border-white/10 pt-4 flex flex-col gap-3">
-            <a href="#" className="text-gray-300 text-sm font-medium">Iniciar sesión</a>
-            <Link
-              to="/directoriotarot"
-              onClick={() => setOpen(false)}
-              className="bg-purple-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full text-center"
-            >
-              Registrarme
-            </Link>
+            {user ? (
+              <>
+                <div className="flex items-center gap-2 text-gray-400 text-sm">
+                  <User size={14} className="text-purple-400" />
+                  <span className="truncate">{user.email}</span>
+                </div>
+                <button
+                  onClick={() => { handleSignOut(); setOpen(false) }}
+                  className="flex items-center gap-2 text-gray-300 text-sm font-medium"
+                >
+                  <LogOut size={14} /> Cerrar sesión
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" onClick={() => setOpen(false)} className="text-gray-300 text-sm font-medium">
+                  Iniciar sesión
+                </Link>
+                <Link
+                  to="/registro"
+                  onClick={() => setOpen(false)}
+                  className="bg-purple-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full text-center"
+                >
+                  Registrarme
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
