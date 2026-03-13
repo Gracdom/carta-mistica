@@ -14,7 +14,7 @@ export default function AdminGuard({ children }) {
     )
   }
 
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) return <Navigate to="/admin/login" replace />
 
   if (ADMIN_EMAIL && user.email !== ADMIN_EMAIL) {
     return (

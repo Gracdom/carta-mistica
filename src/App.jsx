@@ -12,6 +12,7 @@ import RegistrosAkasicos from './pages/RegistrosAkasicos'
 import PagoExitoso from './pages/PagoExitoso'
 import AdminGuard from './pages/admin/AdminGuard'
 import AdminLayout from './pages/admin/AdminLayout'
+import AdminLogin from './pages/admin/AdminLogin'
 import Dashboard from './pages/admin/Dashboard'
 import AdminTarotistas from './pages/admin/AdminTarotistas'
 import AdminTarotistasForm from './pages/admin/AdminTarotistasForm'
@@ -61,6 +62,7 @@ export default function App() {
           <Route path="/soporte" element={<Soporte />} />
           <Route path="/registros-akasicos" element={<RegistrosAkasicos />} />
           <Route path="/pago-exitoso" element={<PagoExitoso />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminGuard><AdminLayout /></AdminGuard>}>
             <Route index element={<Dashboard />} />
             <Route path="tarotistas" element={<AdminTarotistas />} />

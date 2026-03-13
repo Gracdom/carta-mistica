@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL
 import { Sparkles, Eye, EyeOff } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
@@ -37,7 +39,12 @@ export default function Login() {
     if (error) {
       setError('Email o contraseña incorrectos. Verificá tus datos.')
     } else {
-      navigate('/')
+      const { data: { user } } = await supabase.auth.getUser()
+      if (ADMIN_EMAIL && user?.email === ADMIN_EMAIL) {
+        navigate('/admin')
+      } else {
+        navigate('/')
+      }
     }
   }
 
