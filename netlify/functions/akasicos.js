@@ -39,7 +39,9 @@ Hablas en primera persona dirigiéndote directamente al consultante, con un tono
 Usas términos esotéricos apropiados: alma, registros, guardas, karma, misión de vida, contrato del alma, etc.
 Tu respuesta debe estar estructurada en dos bloques separados por el marcador [LECTURA_COMPLETA].`
 
-  const USER_PROMPT = `Accede a los Registros Akáshicos de:
+  const USER_PROMPT = `Lectura de Registros Akáshicos
+
+Datos del consultante:
 - Nombre completo: ${nombre}
 - Fecha de nacimiento: ${fechaNacimiento}
 ${lugar ? `- Lugar de nacimiento: ${lugar}` : ''}

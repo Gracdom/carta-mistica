@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Sparkles, Lock, BookOpen, Star, ChevronDown } from 'lucide-react'
+import { Sparkles, Lock, BookOpen, Star } from 'lucide-react'
+import { supabase } from '../lib/supabase'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 
@@ -70,6 +71,20 @@ export default function RegistrosAkasicos() {
     setDesbloqueado(false)
 
     try {
+      // 1. Guardar consulta en Supabase
+      const { data: consulta } = await supabase
+        .from('consultas_akasicas')
+        .insert({
+          nombre:            form.nombre,
+          fecha_nacimiento:  form.fechaNacimiento,
+          lugar_nacimiento:  form.lugar || null,
+          pregunta:          form.pregunta,
+          estado:            'preview',
+        })
+        .select('id')
+        .single()
+
+      // 2. Llamar a OpenAI vía Netlify Function
       const res = await fetch('/.netlify/functions/akasicos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -77,6 +92,18 @@ export default function RegistrosAkasicos() {
       })
       const data = await res.json()
       if (!res.ok || data.error) throw new Error(data.error || 'Error al consultar los registros.')
+
+      // 3. Guardar el resultado generado en Supabase
+      if (consulta?.id) {
+        await supabase
+          .from('consultas_akasicas')
+          .update({
+            lectura_preview:  data.preview,
+            lectura_completa: data.completa,
+          })
+          .eq('id', consulta.id)
+      }
+
       setResultado(data)
       setEstado('resultado')
     } catch (err) {
