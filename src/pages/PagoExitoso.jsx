@@ -6,10 +6,22 @@ import Footer from '../components/Footer'
 
 export default function PagoExitoso() {
   const [dots, setDots] = useState(1)
+  const [txData, setTxData] = useState(null)
 
   useEffect(() => {
     const t = setInterval(() => setDots(d => (d % 3) + 1), 600)
     return () => clearInterval(t)
+  }, [])
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search)
+    setTxData({
+      session_id: p.get('session_id') || '—',
+      email:      p.get('email')      || '—',
+      phone:      p.get('phone')      || '—',
+      value:      p.get('value')      || '—',
+      currency:   (p.get('currency') || 'EUR').toUpperCase(),
+    })
   }, [])
 
   // ── Evento de compra para GTM ─────────────────────────────────────────────
@@ -114,6 +126,27 @@ export default function PagoExitoso() {
               </div>
             </div>
           </div>
+
+          {/* Datos de la transacción */}
+          {txData && (
+            <div className="rounded-2xl p-5 mb-8 text-left"
+              style={{ background:'rgba(255,255,255,.03)', border:'1px solid rgba(255,255,255,.08)' }}>
+              <p className="text-white/30 text-[10px] uppercase tracking-widest mb-4">Detalles de la transacción</p>
+              <div className="space-y-2.5">
+                {[
+                  { label: 'Session ID',  value: txData.session_id, mono: true },
+                  { label: 'Email',       value: txData.email },
+                  { label: 'Teléfono',    value: txData.phone },
+                  { label: 'Importe',     value: txData.value !== '—' ? `${txData.value} ${txData.currency}` : '—' },
+                ].map(({ label, value, mono }) => (
+                  <div key={label} className="flex items-start justify-between gap-4">
+                    <span className="text-white/30 text-xs flex-shrink-0">{label}</span>
+                    <span className={`text-white/60 text-xs text-right break-all ${mono ? 'font-mono' : ''}`}>{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <Link to="/"
             className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors border border-white/10 hover:border-white/20 px-6 py-3 rounded-full">
