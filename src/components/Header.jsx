@@ -15,6 +15,7 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false)
   const { pathname } = useLocation()
   const { user, signOut } = useAuth()
+  const isDirectorio = pathname === '/directoriotarot'
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -47,21 +48,23 @@ export default function Header() {
         </Link>
 
         {/* Nav desktop */}
-        <nav className="hidden md:flex items-center gap-6">
-          {NAV.map(({ label, to }) => (
-            <Link
-              key={label}
-              to={to}
-              className={`text-sm font-medium transition-colors duration-200 ${
-                pathname === to
-                  ? 'text-purple-400'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              {label}
-            </Link>
-          ))}
-        </nav>
+        {!isDirectorio && (
+          <nav className="hidden md:flex items-center gap-6">
+            {NAV.map(({ label, to }) => (
+              <Link
+                key={label}
+                to={to}
+                className={`text-sm font-medium transition-colors duration-200 ${
+                  pathname === to
+                    ? 'text-purple-400'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+        )}
 
         {/* CTAs desktop */}
         <div className="hidden md:flex items-center gap-3 flex-shrink-0">
@@ -94,13 +97,15 @@ export default function Header() {
         </div>
 
         {/* Mobile toggle */}
-        <button
-          className="md:hidden text-white p-1"
-          onClick={() => setOpen(!open)}
-          aria-label="Menú"
-        >
-          {open ? <X size={22} /> : <Menu size={22} />}
-        </button>
+        {!isDirectorio && (
+          <button
+            className="md:hidden text-white p-1"
+            onClick={() => setOpen(!open)}
+            aria-label="Menú"
+          >
+            {open ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        )}
       </div>
 
       {/* Mobile drawer */}
