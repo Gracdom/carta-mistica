@@ -565,7 +565,7 @@ export default function ModalRegistros({ onClose }) {
             <div className="flex items-center gap-3 mb-3">
               <div className="text-center flex-shrink-0">
                 <p className="font-playfair text-white/85 text-2xl font-bold leading-none">
-                  3<span className="text-violet-300/70 text-lg">€</span>
+                  6<span className="text-violet-300/70 text-lg">€</span>
                 </p>
                 <p className="text-white/20 text-[9px] mt-0.5">pago único</p>
               </div>
