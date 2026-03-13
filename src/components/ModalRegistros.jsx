@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { X, Sparkles, ChevronDown, Check, Mail } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
+
 // ── Constantes ────────────────────────────────────────────────────────────────
 const INTENCIONES = [
   'Amor y relaciones',
@@ -189,20 +190,17 @@ export default function ModalRegistros({ onClose }) {
       const id = consulta?.id
       setConsultaId(id)
 
-      // 2. Llamar a OpenAI
+      // 2. Llamar a la Edge Function de Supabase
       const pregunta = form.intenciones.join(', ')
-      const res = await fetch('/.netlify/functions/akasicos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombre:           form.nombre,
-          fechaNacimiento:  form.fechaNacimiento,
-          lugar:            form.lugar,
+      const { data, error: fnErr } = await supabase.functions.invoke('akasicos', {
+        body: {
+          nombre:          form.nombre,
+          fechaNacimiento: form.fechaNacimiento,
+          lugar:           form.lugar,
           pregunta,
-        }),
+        },
       })
-      const data = await res.json()
-      if (!res.ok || data.error) throw new Error(data.error || 'Error al consultar los registros.')
+      if (fnErr || data?.error) throw new Error(data?.error || fnErr?.message || 'Error al consultar los registros.')
 
       // 3. Actualizar consulta con el resultado
       if (id) {
@@ -227,16 +225,12 @@ export default function ModalRegistros({ onClose }) {
   const handlePagar = async () => {
     setLoadingPago(true)
     try {
-      const res = await fetch('/.netlify/functions/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ consultaId, email: form.email, nombre: form.nombre }),
+      const { data, error: fnErr } = await supabase.functions.invoke('create-checkout', {
+        body: { consultaId, email: form.email, nombre: form.nombre },
       })
-      const data = await res.json()
-      if (data.url) {
+      if (fnErr || data?.error) throw new Error(data?.error || fnErr?.message || 'Error al crear el pago.')
+      if (data?.url) {
         window.location.href = data.url
-      } else {
-        throw new Error(data.error || 'Error al crear el pago.')
       }
     } catch (err) {
       alert(err.message)
