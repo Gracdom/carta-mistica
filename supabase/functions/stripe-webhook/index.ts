@@ -110,26 +110,52 @@ Deno.serve(async (req) => {
 </body>
 </html>`
 
-  try {
-    const resendRes = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
-      },
-      body: JSON.stringify({
-        from:    Deno.env.get('EMAIL_FROM') ?? 'Carta Mística <noreply@cartamistica.com>',
-        to:      [email],
-        subject: `✦ Tu Lectura de Registros Akáshicos, ${nombre}`,
-        html,
-      }),
-    })
+  const resendFrom = Deno.env.get('EMAIL_FROM') ?? 'Carta Mística <noreply@cartamistica.com>'
+  const resendKey  = Deno.env.get('RESEND_API_KEY') ?? ''
 
-    if (!resendRes.ok) {
-      console.error('Resend error:', await resendRes.text())
-    } else {
-      console.log('Email enviado a:', email)
-    }
+  const sendEmail = async (to: string, subject: string, htmlBody: string) => {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${resendKey}` },
+      body: JSON.stringify({ from: resendFrom, to: [to], subject, html: htmlBody }),
+    })
+    if (!res.ok) console.error(`Email error (${to}):`, await res.text())
+    else console.log('Email enviado a:', to)
+  }
+
+  try {
+    // 1. Email al cliente con su lectura completa
+    await sendEmail(email, `✦ Tu Lectura de Registros Akáshicos, ${nombre}`, html)
+
+    // 2. Notificación de venta al equipo interno
+    const notifEmail = Deno.env.get('NOTIF_EMAIL') ?? 'karen.rivera@gracdom.com'
+    const precioTexto = `$${(parseInt(Deno.env.get('PRECIO_LECTURA_CENTAVOS') ?? '1500') / 100).toFixed(2)} ${(Deno.env.get('MONEDA') ?? 'USD').toUpperCase()}`
+    const htmlNotif = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:Arial,sans-serif;">
+  <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+    <div style="background:linear-gradient(135deg,#6d28d9,#9333ea);padding:24px 28px;">
+      <h1 style="color:#fff;margin:0;font-size:20px;">💸 Nueva venta — Carta Mística</h1>
+    </div>
+    <div style="padding:28px;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <tr><td style="padding:8px 0;color:#6b7280;">Cliente</td>      <td style="padding:8px 0;font-weight:600;color:#111;">${nombre}</td></tr>
+        <tr><td style="padding:8px 0;color:#6b7280;">Email</td>         <td style="padding:8px 0;color:#111;">${email}</td></tr>
+        <tr><td style="padding:8px 0;color:#6b7280;">Intención</td>     <td style="padding:8px 0;color:#111;">${intenciones || '—'}</td></tr>
+        <tr><td style="padding:8px 0;color:#6b7280;">Monto</td>         <td style="padding:8px 0;font-weight:700;color:#7c3aed;">${precioTexto}</td></tr>
+        <tr><td style="padding:8px 0;color:#6b7280;">Consulta ID</td>   <td style="padding:8px 0;font-size:12px;color:#9ca3af;">${consultaId}</td></tr>
+      </table>
+      <p style="margin:20px 0 0;font-size:13px;color:#9ca3af;">
+        La lectura completa fue enviada automáticamente al cliente.<br/>
+        Podés ver todos los detalles en el <a href="https://cartamistica.com/admin" style="color:#7c3aed;">panel de administración</a>.
+      </p>
+    </div>
+  </div>
+</body>
+</html>`
+    await sendEmail(notifEmail, `💸 Nueva venta: ${nombre} — ${precioTexto}`, htmlNotif)
+
   } catch (emailErr) {
     console.error('Email send error:', emailErr)
   }
