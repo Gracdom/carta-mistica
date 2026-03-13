@@ -363,6 +363,14 @@ export default function ModalRegistros({ onClose }) {
         .s-l{ animation: sInL .4s cubic-bezier(.25,.46,.45,.94) forwards }
         .fu { animation: fadeUp .5s ease forwards }
         @keyframes floatSymbol { 0%,100%{transform:translateY(0) rotate(0deg);opacity:.08} 50%{transform:translateY(-12px) rotate(8deg);opacity:.18} }
+        @keyframes lockPulse { 0%,100%{box-shadow:0 0 0px rgba(109,40,217,0)} 50%{box-shadow:0 0 40px rgba(109,40,217,.25)} }
+        @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+        @keyframes btnPulse { 0%,100%{box-shadow:0 0 20px rgba(109,40,217,.3),0 0 0px rgba(139,92,246,0)} 50%{box-shadow:0 0 50px rgba(109,40,217,.5),0 0 80px rgba(139,92,246,.15)} }
+        @keyframes scanline { 0%{transform:translateY(-100%)} 100%{transform:translateY(400%)} }
+        @keyframes revealGlow { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
+        .btn-pulse { animation: btnPulse 2.5s ease-in-out infinite }
+        .lock-pulse { animation: lockPulse 3s ease-in-out infinite }
+        .reveal-glow { animation: revealGlow .6s ease forwards }
       `}</style>
 
       <div
@@ -490,57 +498,121 @@ export default function ModalRegistros({ onClose }) {
 
         {/* ── PREVIEW ── */}
         {estado === 'preview' && (
-          <div className="relative px-8 sm:px-10 pt-9 pb-8 fu">
-            <div className="text-center mb-8">
-              <p className="text-white/10 text-xs tracking-[.7em] mb-4 select-none">✦ ◈ ✦</p>
-              <h2 className="font-playfair text-white/85 text-2xl font-bold mb-2">Tu Registro está listo</h2>
-              <p className="text-white/20 text-sm">
-                Hola, <span className="text-violet-300/50 font-medium">{form.nombre}</span>
-              </p>
-            </div>
+          <div className="relative overflow-y-auto max-h-[88vh] sm:max-h-[86vh]">
+            {/* Glow de fondo extra para el preview */}
+            <div className="absolute inset-0 pointer-events-none"
+              style={{background:'radial-gradient(ellipse 70% 50% at 50% 80%,rgba(109,40,217,.12),transparent 70%)'}}/>
 
-            {/* Teaser */}
-            <div className="rounded-2xl p-5 mb-5"
-              style={{background:'linear-gradient(135deg,rgba(109,40,217,.1),rgba(79,46,220,.04))',border:'1px solid rgba(139,92,246,.14)'}}>
-              <p className="text-[10px] text-violet-400/40 uppercase tracking-widest mb-3">Vista previa gratuita</p>
-              <p className="text-white/60 text-sm leading-relaxed italic">"{teaser}"</p>
-            </div>
+            <div className="relative px-7 sm:px-9 pt-8 pb-8 reveal-glow">
 
-            {/* Lectura bloqueada */}
-            <div className="rounded-2xl p-5 mb-5 text-center relative overflow-hidden"
-              style={{background:'rgba(255,255,255,.01)',border:'1px dashed rgba(255,255,255,.05)'}}>
-              <p className="text-white/[0.07] text-xs leading-loose blur-[3px] select-none pointer-events-none">
-                Misión de vida · Bloqueos kármicos · Respuesta específica · Mensaje de tus Guardianes · Propósito del alma · Patrones de karma
-              </p>
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
-                <span className="text-white/15 text-2xl">◈</span>
-                <p className="text-white/20 text-[11px] tracking-wide">Contenido bloqueado</p>
+              {/* Header */}
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center gap-3 mb-4">
+                  <div className="h-px w-8" style={{background:'linear-gradient(90deg,transparent,rgba(139,92,246,.4))'}}/>
+                  <span className="text-violet-400/40 text-xs tracking-widest">✦ ◈ ✦</span>
+                  <div className="h-px w-8" style={{background:'linear-gradient(90deg,rgba(139,92,246,.4),transparent)'}}/>
+                </div>
+                <h2 className="font-playfair text-white text-2xl font-bold mb-1 leading-snug">
+                  Tu Registro Akáshico<br/>
+                  <span style={{background:'linear-gradient(135deg,#c4b5fd,#a78bfa)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>
+                    está listo, {form.nombre.split(' ')[0]}
+                  </span>
+                </h2>
+              </div>
+
+              {/* Teaser con efecto de escritura */}
+              <div className="relative rounded-2xl p-5 mb-4 overflow-hidden"
+                style={{background:'linear-gradient(135deg,rgba(109,40,217,.12),rgba(79,46,220,.05))',border:'1px solid rgba(139,92,246,.2)'}}>
+                {/* Línea de scan animada */}
+                <div className="absolute inset-x-0 h-12 pointer-events-none opacity-30"
+                  style={{background:'linear-gradient(180deg,transparent,rgba(139,92,246,.08),transparent)',animation:'scanline 4s linear infinite'}}/>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-violet-400/60 text-[10px] uppercase tracking-widest font-medium">✦ Tu mensaje del alma</span>
+                </div>
+                <p className="text-white/75 text-sm leading-relaxed italic relative z-10">"{teaser}"</p>
+              </div>
+
+              {/* Sección bloqueada — el centro de atención */}
+              <div className="relative rounded-2xl overflow-hidden mb-5 lock-pulse"
+                style={{border:'1px solid rgba(139,92,246,.2)'}}>
+                {/* Fondo con gradiente */}
+                <div className="absolute inset-0"
+                  style={{background:'linear-gradient(135deg,rgba(30,10,60,.9),rgba(10,5,30,.95))'}}/>
+                {/* Shimmer horizontal */}
+                <div className="absolute inset-0 opacity-30 pointer-events-none"
+                  style={{background:'linear-gradient(90deg,transparent 0%,rgba(139,92,246,.15) 50%,transparent 100%)',backgroundSize:'200% 100%',animation:'shimmer 3s linear infinite'}}/>
+
+                {/* Contenido borroso */}
+                <div className="relative p-5">
+                  <div className="blur-sm select-none pointer-events-none opacity-20 space-y-1.5 mb-4">
+                    {['Tu misión de vida en esta encarnación es...','Los bloqueos kármicos que frenan tu avance son...','Los Guardianes Akáshicos tienen un mensaje especial...','El origen de tu patrón en el amor viene de...'].map((l,i)=>(
+                      <p key={i} className="text-white text-xs leading-relaxed">{l}</p>
+                    ))}
+                  </div>
+                  {/* Overlay central */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                      style={{background:'rgba(109,40,217,.25)',border:'1px solid rgba(139,92,246,.35)'}}>
+                      <span className="text-violet-300 text-lg">◈</span>
+                    </div>
+                    <p className="text-white/50 text-xs tracking-widest uppercase">Lectura completa bloqueada</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lo que incluye — 2 columnas compactas */}
+              <div className="grid grid-cols-2 gap-2 mb-6">
+                {[
+                  { icon:'✦', text:'Misión y propósito de tu alma' },
+                  { icon:'◈', text:'Bloqueos kármicos activos' },
+                  { icon:'☽', text:form.intenciones[0] ? `Respuesta: ${form.intenciones[0]}${form.intenciones.length>1?'…':''}` : 'Respuesta a tus intenciones' },
+                  { icon:'⟡', text:'Mensaje de tus Guardianes' },
+                ].map(({icon,text},i)=>(
+                  <div key={i} className="flex items-start gap-2 px-3 py-2.5 rounded-xl text-[11px]"
+                    style={{background:'rgba(255,255,255,.025)',border:'1px solid rgba(255,255,255,.05)'}}>
+                    <span className="text-violet-400/50 flex-shrink-0 mt-0.5">{icon}</span>
+                    <span className="text-white/40 leading-snug">{text}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Precio */}
+              <div className="text-center mb-4">
+                <p className="text-white/20 text-xs">Lectura completa personalizada</p>
+                <p className="font-playfair text-white/80 text-3xl font-bold mt-1">
+                  3 <span className="text-violet-300/70">€</span>
+                  <span className="text-white/20 text-sm font-normal ml-2">pago único</span>
+                </p>
+              </div>
+
+              {/* Botón CTA con pulso */}
+              <button
+                onClick={handlePagar}
+                disabled={loadingPago}
+                className="btn-pulse relative w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2.5 transition-all hover:scale-[1.02] active:scale-[.98] disabled:opacity-40 overflow-hidden"
+                style={{
+                  background:'linear-gradient(135deg,#6d28d9,#7c3aed,#8b5cf6)',
+                  border:'1px solid rgba(167,139,250,.3)',
+                  color:'rgba(255,255,255,.95)',
+                }}>
+                {/* Shimmer en el botón */}
+                <div className="absolute inset-0 pointer-events-none"
+                  style={{background:'linear-gradient(90deg,transparent 0%,rgba(255,255,255,.08) 50%,transparent 100%)',backgroundSize:'200% 100%',animation:'shimmer 2s linear infinite'}}/>
+                {loadingPago
+                  ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
+                  : <>
+                      <Sparkles size={16} className="text-violet-200 relative z-10"/>
+                      <span className="relative z-10">Desbloquear lectura completa</span>
+                    </>
+                }
+              </button>
+
+              <div className="flex items-center justify-center gap-4 mt-3">
+                <p className="text-white/15 text-[10px]">🔒 Pago seguro con Stripe</p>
+                <span className="text-white/10 text-[10px]">·</span>
+                <p className="text-white/15 text-[10px]">Enviada a {form.email}</p>
               </div>
             </div>
-
-            {/* Incluye */}
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2 mb-6 px-1">
-              {[
-                'Misión y propósito de tu alma',
-                'Bloqueos kármicos activos',
-                `Respuesta: ${form.intenciones[0] || ''}${form.intenciones.length > 1 ? '…' : ''}`,
-                'Mensaje de tus Guardianes',
-              ].map((item, i) => (
-                <div key={i} className="flex items-start gap-2 text-[11px] text-white/30">
-                  <span className="text-violet-400/35 mt-0.5 flex-shrink-0">✦</span>{item}
-                </div>
-              ))}
-            </div>
-
-            <button onClick={handlePagar} disabled={loadingPago}
-              className="w-full py-4 rounded-2xl font-semibold flex items-center justify-center gap-2 transition-all hover:opacity-85 disabled:opacity-40"
-              style={{background:'linear-gradient(135deg,rgba(109,40,217,.65),rgba(139,92,246,.45))',border:'1px solid rgba(139,92,246,.18)',boxShadow:'0 0 40px rgba(109,40,217,.18)',color:'rgba(255,255,255,.8)'}}>
-              {loadingPago
-                ? <span className="w-4 h-4 border-2 border-white/20 border-t-white/50 rounded-full animate-spin"/>
-                : <><Sparkles size={14} className="text-violet-300/70"/>Desbloquear lectura completa</>
-              }
-            </button>
-            <p className="text-white/12 text-[10px] text-center mt-3">Pago seguro · Enviada a {form.email}</p>
           </div>
         )}
       </div>
