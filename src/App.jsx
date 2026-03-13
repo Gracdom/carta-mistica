@@ -3,6 +3,8 @@ import Home from './pages/Home'
 import Tarotistas from './pages/Tarotistas'
 import Perfil from './pages/Perfil'
 import DirectorioTarot from './pages/DirectorioTarot'
+import Blog from './pages/Blog'
+import Soporte from './pages/Soporte'
 import './App.css'
 
 // Detecta si la app está corriendo en el subdominio "directoriotarot"
@@ -29,6 +31,8 @@ export default function App() {
         <Route path="/tarotistas" element={<Tarotistas />} />
         <Route path="/tarotistas/:id" element={<Perfil />} />
         <Route path="/directoriotarot" element={<DirectorioTarot />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/soporte" element={<Soporte />} />
       </Routes>
     </BrowserRouter>
   )

@@ -14,6 +14,7 @@ export default function Footer() {
                 src="/logo.png"
                 alt="Carta Mística"
                 className="h-12 w-auto object-contain"
+                style={{ mixBlendMode: 'screen' }}
               />
             </Link>
             <p className="text-gray-500 text-sm leading-relaxed mb-5">
@@ -79,10 +80,9 @@ export default function Footer() {
             <h4 className="text-white font-semibold text-sm mb-4 tracking-wide">Empresa</h4>
             <ul className="space-y-2.5">
               {[
-                { label: 'Soy tarotista, quiero unirme', to: '/directoriotarot' },
-                { label: 'Blog', to: '#' },
-                { label: 'Soporte', to: '#' },
-                { label: 'Contacto', to: '#' },
+                { label: 'Blog', to: '/blog' },
+                { label: 'Soporte', to: '/soporte' },
+                { label: 'Contacto', to: '/soporte' },
               ].map(({ label, to }) => (
                 <li key={label}>
                   <Link to={to} className="text-gray-500 hover:text-gray-300 text-sm transition-colors">
@@ -90,6 +90,14 @@ export default function Footer() {
                   </Link>
                 </li>
               ))}
+              <li className="pt-2">
+                <Link
+                  to="/directoriotarot"
+                  className="inline-flex items-center gap-1.5 text-purple-400 hover:text-purple-300 text-sm font-semibold transition-colors"
+                >
+                  ✦ Soy Tarotista, quiero unirme
+                </Link>
+              </li>
             </ul>
             <div className="mt-5 flex items-center gap-2 text-gray-500 text-sm">
               <Mail size={14} className="text-purple-400 flex-shrink-0" />
