@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import {
   CheckCircle, Star, TrendingUp, Shield, Globe,
-  CreditCard, ArrowRight, ChevronLeft, Sparkles
+  CreditCard, ArrowRight, Sparkles
 } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
@@ -58,7 +58,7 @@ const STATS = [
 
 const INPUT = 'w-full bg-white/4 border border-white/10 focus:border-purple-500/60 focus:bg-white/6 rounded-xl px-4 py-3 text-white placeholder-gray-500 outline-none transition-all text-sm'
 
-export default function Unirse() {
+export default function DirectorioTarot() {
   const [form, setForm] = useState({
     nombre: '', email: '', whatsapp: '', pais: 'Argentina',
     especialidad: '', modelo: 'comision', mensaje: ''
@@ -182,11 +182,6 @@ export default function Unirse() {
 
           {/* Content */}
           <div className="relative max-w-4xl mx-auto pt-28 pb-20">
-            <Link to="/"
-              className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-sm transition-colors mb-10">
-              <ChevronLeft size={14} /> Volver al inicio
-            </Link>
-
             {/* Badge */}
             <div className="inline-flex items-center gap-3 mb-8"
               style={{ background:'linear-gradient(135deg,rgba(109,40,217,.28),rgba(168,85,247,.15))', border:'1px solid rgba(167,139,250,.35)', borderRadius:'9999px', padding:'10px 22px' }}>

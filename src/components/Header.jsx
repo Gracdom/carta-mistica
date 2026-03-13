@@ -5,7 +5,7 @@ import { Menu, X } from 'lucide-react'
 const NAV = [
   { label: 'Inicio', to: '/' },
   { label: 'Ver Tarotistas', to: '/tarotistas' },
-  { label: 'Soy Tarotista', to: '/unirse' },
+  { label: 'Soy Tarotista', to: '/directoriotarot' },
   { label: 'Blog', to: '#' },
   { label: 'Soporte', to: '#' },
 ]
@@ -50,7 +50,7 @@ export default function Header() {
             Iniciar sesión
           </a>
           <Link
-            to="/unirse"
+            to="/directoriotarot"
             className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold px-4 py-2 rounded-full transition-colors shadow-md shadow-purple-900/40"
           >
             Registrarme
@@ -90,7 +90,7 @@ export default function Header() {
           <div className="border-t border-white/10 pt-4 flex flex-col gap-3">
             <a href="#" className="text-gray-300 text-sm font-medium">Iniciar sesión</a>
             <Link
-              to="/unirse"
+              to="/directoriotarot"
               onClick={() => setOpen(false)}
               className="bg-purple-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full text-center"
             >

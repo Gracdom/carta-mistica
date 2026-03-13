@@ -79,7 +79,7 @@ export default function Footer() {
             <h4 className="text-white font-semibold text-sm mb-4 tracking-wide">Empresa</h4>
             <ul className="space-y-2.5">
               {[
-                { label: 'Soy tarotista, quiero unirme', to: '/unirse' },
+                { label: 'Soy tarotista, quiero unirme', to: '/directoriotarot' },
                 { label: 'Blog', to: '#' },
                 { label: 'Soporte', to: '#' },
                 { label: 'Contacto', to: '#' },

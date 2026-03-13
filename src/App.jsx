@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
 import Tarotistas from './pages/Tarotistas'
 import Perfil from './pages/Perfil'
-import Unirse from './pages/Unirse'
+import DirectorioTarot from './pages/DirectorioTarot'
 import './App.css'
 
 export default function App() {
@@ -12,7 +12,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/tarotistas" element={<Tarotistas />} />
         <Route path="/tarotistas/:id" element={<Perfil />} />
-        <Route path="/unirse" element={<Unirse />} />
+        <Route path="/directoriotarot" element={<DirectorioTarot />} />
       </Routes>
     </BrowserRouter>
   )

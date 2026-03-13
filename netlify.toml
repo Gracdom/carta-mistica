@@ -2,6 +2,15 @@
   command = "npm run build"
   publish = "dist"
 
+# ── Edge Function: subdomain router ──────────────────────────────────────────
+# Intercepta peticiones de directoriotarot.cartamistica.com y hace
+# un rewrite interno a /directoriotarot (la URL del browser no cambia).
+[[edge_functions]]
+  path = "/*"
+  function = "subdomain-router"
+
+# ── SPA fallback ─────────────────────────────────────────────────────────────
+# Necesario para que React Router maneje las rutas del lado del cliente.
 [[redirects]]
   from = "/*"
   to = "/index.html"

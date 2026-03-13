@@ -236,7 +236,7 @@ function Hero() {
 
             {/* CTA secundario */}
             <Link
-              to="/unirse"
+              to="/directoriotarot"
               className="border border-white/15 hover:border-purple-400/50 text-white/80 hover:text-white font-medium px-6 py-3.5 rounded-full text-sm flex items-center gap-2 transition-all hover:bg-purple-900/20 backdrop-blur-sm"
             >
               Soy tarotista, quiero unirme
@@ -482,7 +482,7 @@ function SoyTarotista() {
                 ))}
               </ul>
               <Link
-                to="/unirse"
+                to="/directoriotarot"
                 className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold px-8 py-3.5 rounded-full transition-colors shadow-lg shadow-purple-900/40"
               >
                 Quiero registrarme como tarotista
