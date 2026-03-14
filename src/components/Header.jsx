@@ -88,15 +88,16 @@ export default function Header() {
         {!user && !isDirectorio && (
           <button
             onClick={() => setShowLead(true)}
-            className="hidden md:flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full transition-all flex-shrink-0"
+            className="hidden md:flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full transition-all duration-200 flex-shrink-0 hover:brightness-110 active:scale-95"
             style={{
-              background: 'linear-gradient(135deg,rgba(124,58,237,.2),rgba(109,40,217,.1))',
-              border: '1px solid rgba(139,92,246,.35)',
-              color: '#c4b5fd',
-              boxShadow: '0 0 14px rgba(124,58,237,.15)',
+              background: '#7c3aed',
+              color: '#ffffff',
+              boxShadow: '0 0 0 0 rgba(124,58,237,0)',
             }}
           >
-            <Sparkles size={13} />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
             ¿Eres tarotista?
           </button>
         )}

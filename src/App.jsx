@@ -7,6 +7,7 @@ import DirectorioTarot from './pages/DirectorioTarot'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Blog from './pages/Blog'
+import BlogPost from './pages/BlogPost'
 import Soporte from './pages/Soporte'
 import Terminos from './pages/Terminos'
 import Privacidad from './pages/Privacidad'
@@ -66,6 +67,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/registro" element={<Register />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/soporte" element={<Soporte />} />
           <Route path="/terminos" element={<Terminos />} />
           <Route path="/privacidad" element={<Privacidad />} />
