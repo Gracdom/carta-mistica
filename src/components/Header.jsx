@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, X, LogOut, User, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import ModalLeadTarotista from './ModalLeadTarotista'
+import { useLeadModal } from '../context/LeadModalContext'
 
 const NAV = [
   { label: 'Inicio', to: '/' },
@@ -13,9 +13,9 @@ const NAV = [
 export default function Header() {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const [showLead, setShowLead] = useState(false)
   const { pathname } = useLocation()
   const { user, signOut } = useAuth()
+  const { openLeadModal } = useLeadModal()
   const isDirectorio = pathname === '/directoriotarot'
   const navigate = useNavigate()
 
@@ -87,7 +87,7 @@ export default function Header() {
         {/* Botón ¿Eres tarotista? — siempre visible en desktop cuando no hay sesión */}
         {!user && !isDirectorio && (
           <button
-            onClick={() => setShowLead(true)}
+            onClick={openLeadModal}
             className="hidden md:flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full transition-all duration-200 flex-shrink-0 hover:brightness-110 active:scale-95"
             style={{
               background: '#7c3aed',
@@ -151,7 +151,7 @@ export default function Header() {
             )}
             {!user && (
               <button
-                onClick={() => { setOpen(false); setShowLead(true) }}
+                onClick={() => { setOpen(false); openLeadModal() }}
                 className="flex items-center justify-center gap-1.5 text-sm font-semibold px-5 py-2.5 rounded-full transition-all"
                 style={{
                   background: 'linear-gradient(135deg,rgba(124,58,237,.25),rgba(109,40,217,.15))',
@@ -165,8 +165,6 @@ export default function Header() {
         </div>
       )}
     </header>
-
-    {showLead && <ModalLeadTarotista onClose={() => setShowLead(false)} />}
   </>
   )
 }

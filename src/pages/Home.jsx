@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import {
   Sparkles, BookOpen, Lock, Star, ChevronDown, ChevronUp,
   ArrowRight, Shield, Heart, Eye, Zap, Moon, CheckCircle
@@ -198,7 +197,7 @@ function Hero({ onOpenModal }) {
 }
 
 // ── Cómo funciona ─────────────────────────────────────────────────────────────
-function ComoFunciona() {
+function ComoFunciona({ onOpenModal }) {
   return (
     <section id="como-funciona" className="py-24 sm:py-32"
       style={{ background:'radial-gradient(ellipse 80% 60% at 50% 50%, #0d0830 0%, #030312 70%)' }}>
@@ -235,11 +234,11 @@ function ComoFunciona() {
         </div>
 
         <div className="text-center mt-12">
-          <Link to="/registros-akasicos"
-            className="btn-glow inline-flex items-center gap-2 text-white font-semibold px-8 py-3.5 rounded-full"
+          <button onClick={onOpenModal}
+            className="btn-glow inline-flex items-center gap-2 text-white font-semibold px-8 py-3.5 rounded-full cursor-pointer"
             style={{ background:'linear-gradient(135deg,#6d28d9,#9333ea)', boxShadow:'0 0 20px rgba(139,92,246,.35)' }}>
             <Sparkles size={16} /> Comenzar ahora — gratis
-          </Link>
+          </button>
         </div>
       </div>
     </section>
@@ -314,7 +313,7 @@ function QueIncluye() {
 }
 
 // ── Temas de consulta ─────────────────────────────────────────────────────────
-function TemasConsulta() {
+function TemasConsulta({ onOpenModal }) {
   return (
     <section className="py-24 sm:py-28"
       style={{ background:'radial-gradient(ellipse 70% 60% at 50% 50%, #0d0830 0%, #030312 65%)' }}>
@@ -326,8 +325,8 @@ function TemasConsulta() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
           {PREGUNTAS.map((p, i) => (
-            <Link key={i} to="/registros-akasicos"
-              className="card-hover group rounded-2xl p-5 text-left transition-all"
+            <button key={i} onClick={onOpenModal}
+              className="card-hover group rounded-2xl p-5 text-left transition-all w-full"
               style={{ background:'rgba(255,255,255,.02)', border:'1px solid rgba(255,255,255,.07)' }}>
               <div className="text-2xl mb-3">{p.emoji}</div>
               <p className="text-white text-sm font-semibold mb-1.5">{p.tema}</p>
@@ -335,7 +334,7 @@ function TemasConsulta() {
               <div className="mt-3 flex items-center gap-1 text-purple-400/60 text-xs group-hover:text-purple-300 transition-colors">
                 Consultar <ArrowRight size={11} />
               </div>
-            </Link>
+            </button>
           ))}
         </div>
       </div>
@@ -453,9 +452,9 @@ export default function Home() {
       <Header />
       <main>
         <Hero onOpenModal={openModal} />
-        <ComoFunciona />
+        <ComoFunciona onOpenModal={openModal} />
         <QueIncluye />
-        <TemasConsulta />
+        <TemasConsulta onOpenModal={openModal} />
         <Testimonios />
         <CTACentral onOpenModal={openModal} />
         <FAQs />

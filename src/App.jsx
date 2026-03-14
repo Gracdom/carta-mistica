@@ -28,6 +28,8 @@ import AdminResenas from './pages/admin/AdminResenas'
 import AdminLeads from './pages/admin/AdminLeads'
 import AdminConsultas from './pages/admin/AdminConsultas'
 import { AuthProvider } from './context/AuthContext'
+import { LeadModalProvider, useLeadModal } from './context/LeadModalContext'
+import ModalLeadTarotista from './components/ModalLeadTarotista'
 import './App.css'
 
 function ScrollToTop() {
@@ -41,22 +43,30 @@ function ScrollToTop() {
 const subdomain = window.location.hostname.split('.')[0]
 const isDirectorioSubdomain = subdomain === 'directoriotarot'
 
+function AppGlobal() {
+  const { show, closeLeadModal } = useLeadModal()
+  return <ModalLeadTarotista open={show} onClose={closeLeadModal} />
+}
+
 export default function App() {
   if (isDirectorioSubdomain) {
     return (
       <AuthProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <Routes>
-            <Route path="*" element={<DirectorioTarot />} />
-          </Routes>
-        </BrowserRouter>
+        <LeadModalProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <Routes>
+              <Route path="*" element={<DirectorioTarot />} />
+            </Routes>
+          </BrowserRouter>
+        </LeadModalProvider>
       </AuthProvider>
     )
   }
 
   return (
     <AuthProvider>
+      <LeadModalProvider>
       <BrowserRouter>
         <ScrollToTop />
         <Routes>
@@ -103,7 +113,9 @@ export default function App() {
       </a>
 
       <CookieBanner />
+      <AppGlobal />
     </BrowserRouter>
+    </LeadModalProvider>
     </AuthProvider>
   )
 }

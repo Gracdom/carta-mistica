@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X, Sparkles, ChevronRight, Star, Globe, Phone, Mail, MessageSquare } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -22,12 +22,21 @@ const EXPERIENCIAS = [
 
 const INIT = { nombre: '', email: '', whatsapp: '', pais: '', especialidad: '', experiencia: '', mensaje: '' }
 
-export default function ModalLeadTarotista({ onClose }) {
+export default function ModalLeadTarotista({ open, onClose }) {
   const navigate   = useNavigate()
   const [form, setForm]       = useState(INIT)
   const [errors, setErrors]   = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
+
+  useEffect(() => {
+    if (open) {
+      setForm(INIT)
+      setErrors({})
+      setError('')
+      setLoading(false)
+    }
+  }, [open])
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
 
@@ -97,8 +106,13 @@ export default function ModalLeadTarotista({ onClose }) {
     }`
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
-      style={{ background: 'rgba(0,0,0,.75)', backdropFilter: 'blur(8px)' }}
+    <div
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
+      style={{
+        background: 'rgba(0,0,0,.75)',
+        backdropFilter: 'blur(8px)',
+        display: open ? undefined : 'none',
+      }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
 
       <div className="relative w-full sm:max-w-lg max-h-[96vh] sm:max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl"
