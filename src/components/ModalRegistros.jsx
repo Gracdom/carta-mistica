@@ -17,10 +17,10 @@ const INTENCIONES = [
 ]
 
 const PREGUNTAS = [
-  { key: 'nombre',          type: 'text',  pregunta: '¿Cuál es tu nombre?',                placeholder: 'Escribe tu nombre completo…'          },
-  { key: 'fechaNacimiento', type: 'date',  pregunta: '¿Cuándo llegaste a este mundo?',      placeholder: ''                                     },
-  { key: 'lugar',           type: 'text',  pregunta: '¿Desde qué rincón del universo?',     placeholder: 'Ciudad o país donde naciste…'         },
+  { key: 'nombre',          type: 'text',  pregunta: '¿Cuál es tu nombre?',                     placeholder: 'Escribe tu nombre completo…'          },
   { key: 'email',           type: 'email', pregunta: 'Dejanos tu correo para recibir tu lectura', placeholder: 'tu@email.com'                         },
+  { key: 'fechaNacimiento', type: 'date',  pregunta: '¿Cuándo llegaste a este mundo?',           placeholder: ''                                     },
+  { key: 'lugar',           type: 'text',  pregunta: '¿Desde qué rincón del universo?',          placeholder: 'Ciudad o país donde naciste…'         },
 ]
 
 const FRASES_LOADING = [
@@ -254,7 +254,9 @@ export default function ModalRegistros({ onClose }) {
 
   const validar = () => {
     if (paso === 0 && !form.nombre.trim())        { setError('Escribe tu nombre para continuar.'); return false }
-    if (paso === 1 && !form.fechaNacimiento)      { setError('Ingresá tu fecha de nacimiento.'); return false }
+    if (paso === 1 && !form.email.trim())         { setError('Ingresá tu email para continuar.'); return false }
+    if (paso === 1 && !/\S+@\S+\.\S+/.test(form.email)) { setError('El email no es válido.'); return false }
+    if (paso === 2 && !form.fechaNacimiento)      { setError('Ingresá tu fecha de nacimiento.'); return false }
     if (paso === 4 && form.intenciones.length===0){ setError('Elegí al menos una intención.'); return false }
     return true
   }

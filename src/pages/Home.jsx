@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import {
   Sparkles, BookOpen, Lock, Star, ChevronDown, ChevronUp,
-  ArrowRight, Shield, Heart, Eye, Zap, Moon, CheckCircle
+  ArrowRight, Shield, Heart, Eye, Zap, Moon, CheckCircle,
+  HeartHandshake, Compass, Coins, Flame, Leaf, Wand2
 } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
@@ -46,12 +47,12 @@ const QUE_INCLUYE = [
 ]
 
 const PREGUNTAS = [
-  { emoji:'❤️', tema:'Amor y relaciones',     ej:'¿Por qué atraigo siempre el mismo tipo de relación?' },
-  { emoji:'🌟', tema:'Propósito de vida',      ej:'¿Cuál es la misión de mi alma en esta encarnación?' },
-  { emoji:'💰', tema:'Dinero y abundancia',    ej:'¿Qué bloqueos kármicos me impiden prosperar?' },
-  { emoji:'🔥', tema:'Llamas gemelas',          ej:'¿Cuál es el contrato del alma con mi llama gemela?' },
-  { emoji:'🌿', tema:'Salud y energía',         ej:'¿Qué debo sanar a nivel del alma para avanzar?' },
-  { emoji:'✨', tema:'Dones espirituales',      ej:'¿Cuáles son mis talentos y dones del alma?' },
+  { icon: HeartHandshake, color: '#f472b6', tema:'Amor y relaciones',   ej:'¿Por qué atraigo siempre el mismo tipo de relación?' },
+  { icon: Compass,        color: '#a78bfa', tema:'Propósito de vida',    ej:'¿Cuál es la misión de mi alma en esta encarnación?' },
+  { icon: Zap,            color: '#fbbf24', tema:'Dinero y abundancia',  ej:'¿Qué bloqueos kármicos me impiden prosperar?' },
+  { icon: Flame,          color: '#fb923c', tema:'Llamas gemelas',        ej:'¿Cuál es el contrato del alma con mi llama gemela?' },
+  { icon: Leaf,           color: '#34d399', tema:'Salud y energía',       ej:'¿Qué debo sanar a nivel del alma para avanzar?' },
+  { icon: Wand2,          color: '#818cf8', tema:'Dones espirituales',   ej:'¿Cuáles son mis talentos y dones del alma?' },
 ]
 
 const TESTIMONIOS = [
@@ -328,7 +329,10 @@ function TemasConsulta({ onOpenModal }) {
             <button key={i} onClick={onOpenModal}
               className="card-hover group rounded-2xl p-5 text-left transition-all w-full"
               style={{ background:'rgba(255,255,255,.02)', border:'1px solid rgba(255,255,255,.07)' }}>
-              <div className="text-2xl mb-3">{p.emoji}</div>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 flex-shrink-0"
+                style={{ background:`${p.color}18`, border:`1px solid ${p.color}30` }}>
+                <p.icon size={18} style={{ color: p.color }} />
+              </div>
               <p className="text-white text-sm font-semibold mb-1.5">{p.tema}</p>
               <p className="text-gray-500 text-xs leading-relaxed italic">"{p.ej}"</p>
               <div className="mt-3 flex items-center gap-1 text-purple-400/60 text-xs group-hover:text-purple-300 transition-colors">
@@ -353,14 +357,26 @@ function Testimonios() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {TESTIMONIOS.map((t, i) => (
-            <div key={i} className="card-hover rounded-2xl p-6"
+            <div key={i} className="card-hover rounded-2xl p-6 flex flex-col"
               style={{ background:'rgba(255,255,255,.02)', border:'1px solid rgba(255,255,255,.07)' }}>
-              <div className="flex gap-0.5 mb-3">
-                {Array.from({length:t.stars}).map((_,j) => (
-                  <Star key={j} size={13} className="text-yellow-400 fill-yellow-400" />
-                ))}
+
+              {/* Cabecera: logo Google + estrellas */}
+              <div className="flex items-center justify-between mb-4">
+                {/* Logo Google oficial */}
+                <img
+                  src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png"
+                  alt="Google"
+                  className="h-5 w-auto opacity-80"
+                />
+                <div className="flex gap-0.5">
+                  {Array.from({length:t.stars}).map((_,j) => (
+                    <Star key={j} size={13} className="text-yellow-400 fill-yellow-400" />
+                  ))}
+                </div>
               </div>
-              <p className="text-gray-300 text-sm leading-relaxed mb-5 italic">"{t.texto}"</p>
+
+              <p className="text-gray-300 text-sm leading-relaxed mb-5 italic flex-1">"{t.texto}"</p>
+
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-purple-300"
                   style={{ background:'rgba(109,40,217,.25)' }}>
@@ -368,7 +384,7 @@ function Testimonios() {
                 </div>
                 <div>
                   <p className="text-white text-xs font-semibold">{t.nombre}</p>
-                  <p className="text-gray-500 text-xs">{t.pais}</p>
+                  <p className="text-gray-500 text-xs">{t.pais} · Reseña en Google</p>
                 </div>
               </div>
             </div>
