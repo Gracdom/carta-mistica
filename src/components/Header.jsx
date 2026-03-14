@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, X, LogOut, User } from 'lucide-react'
+import { Menu, X, LogOut, User, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import ModalLeadTarotista from './ModalLeadTarotista'
 
 const NAV = [
   { label: 'Inicio', to: '/' },
-  { label: 'Ver Tarotistas', to: '/tarotistas' },
   { label: 'Blog', to: '/blog' },
   { label: 'Soporte', to: '/soporte' },
 ]
@@ -13,6 +13,7 @@ const NAV = [
 export default function Header() {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [showLead, setShowLead] = useState(false)
   const { pathname } = useLocation()
   const { user, signOut } = useAuth()
   const isDirectorio = pathname === '/directoriotarot'
@@ -30,6 +31,7 @@ export default function Header() {
   }
 
   return (
+    <>
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       scrolled
         ? 'bg-[#050511]/80 backdrop-blur-lg border-b border-white/8 shadow-lg shadow-black/30'
@@ -66,35 +68,38 @@ export default function Header() {
           </nav>
         )}
 
-        {/* CTAs desktop */}
-        <div className="hidden md:flex items-center gap-3 flex-shrink-0">
-          {user ? (
-            <>
-              <div className="flex items-center gap-1.5 text-gray-400 text-sm">
-                <User size={14} className="text-purple-400" />
-                <span className="max-w-[140px] truncate">{user.email}</span>
-              </div>
-              <button
-                onClick={handleSignOut}
-                className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm font-medium transition-colors"
-              >
-                <LogOut size={14} /> Salir
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
-                Iniciar sesión
-              </Link>
-              <Link
-                to="/registro"
-                className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold px-4 py-2 rounded-full transition-colors shadow-md shadow-purple-900/40"
-              >
-                Registrarme
-              </Link>
-            </>
-          )}
-        </div>
+        {/* CTAs desktop — solo visible si hay sesión activa */}
+        {user && (
+          <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+            <div className="flex items-center gap-1.5 text-gray-400 text-sm">
+              <User size={14} className="text-purple-400" />
+              <span className="max-w-[140px] truncate">{user.email}</span>
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm font-medium transition-colors"
+            >
+              <LogOut size={14} /> Salir
+            </button>
+          </div>
+        )}
+
+        {/* Botón ¿Eres tarotista? — siempre visible en desktop cuando no hay sesión */}
+        {!user && !isDirectorio && (
+          <button
+            onClick={() => setShowLead(true)}
+            className="hidden md:flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full transition-all flex-shrink-0"
+            style={{
+              background: 'linear-gradient(135deg,rgba(124,58,237,.2),rgba(109,40,217,.1))',
+              border: '1px solid rgba(139,92,246,.35)',
+              color: '#c4b5fd',
+              boxShadow: '0 0 14px rgba(124,58,237,.15)',
+            }}
+          >
+            <Sparkles size={13} />
+            ¿Eres tarotista?
+          </button>
+        )}
 
         {/* Mobile toggle */}
         {!isDirectorio && (
@@ -129,7 +134,7 @@ export default function Header() {
             </Link>
           ))}
           <div className="border-t border-white/10 pt-4 flex flex-col gap-3">
-            {user ? (
+            {user && (
               <>
                 <div className="flex items-center gap-2 text-gray-400 text-sm">
                   <User size={14} className="text-purple-400" />
@@ -142,23 +147,25 @@ export default function Header() {
                   <LogOut size={14} /> Cerrar sesión
                 </button>
               </>
-            ) : (
-              <>
-                <Link to="/login" onClick={() => setOpen(false)} className="text-gray-300 text-sm font-medium">
-                  Iniciar sesión
-                </Link>
-                <Link
-                  to="/registro"
-                  onClick={() => setOpen(false)}
-                  className="bg-purple-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full text-center"
-                >
-                  Registrarme
-                </Link>
-              </>
+            )}
+            {!user && (
+              <button
+                onClick={() => { setOpen(false); setShowLead(true) }}
+                className="flex items-center justify-center gap-1.5 text-sm font-semibold px-5 py-2.5 rounded-full transition-all"
+                style={{
+                  background: 'linear-gradient(135deg,rgba(124,58,237,.25),rgba(109,40,217,.15))',
+                  border: '1px solid rgba(139,92,246,.4)',
+                  color: '#c4b5fd',
+                }}>
+                <Sparkles size={13} /> ¿Eres tarotista? Únete
+              </button>
             )}
           </div>
         </div>
       )}
     </header>
+
+    {showLead && <ModalLeadTarotista onClose={() => setShowLead(false)} />}
+  </>
   )
 }

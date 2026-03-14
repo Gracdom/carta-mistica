@@ -20,7 +20,7 @@ const PREGUNTAS = [
   { key: 'nombre',          type: 'text',  pregunta: '¿Cuál es tu nombre?',                placeholder: 'Escribe tu nombre completo…'          },
   { key: 'fechaNacimiento', type: 'date',  pregunta: '¿Cuándo llegaste a este mundo?',      placeholder: ''                                     },
   { key: 'lugar',           type: 'text',  pregunta: '¿Desde qué rincón del universo?',     placeholder: 'Ciudad o país donde naciste…'         },
-  { key: 'email',           type: 'email', pregunta: 'El portal donde recibirás tu mensaje', placeholder: 'tu@email.com'                         },
+  { key: 'email',           type: 'email', pregunta: 'Dejanos tu correo para recibir tu lectura', placeholder: 'tu@email.com'                         },
 ]
 
 const FRASES_LOADING = [

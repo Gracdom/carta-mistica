@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import {
-  LayoutDashboard, Users, FileText, Star, BookOpen,
+  LayoutDashboard, Users, FileText, Star, BookOpen, TrendingUp,
   LogOut, Menu, X, ChevronRight, Sparkles
 } from 'lucide-react'
 
 const NAV = [
   { to: '/admin',              label: 'Dashboard',    icon: LayoutDashboard, end: true },
   { to: '/admin/consultas',    label: 'Consultas ✦',  icon: BookOpen        },
+  { to: '/admin/leads',        label: 'Leads',        icon: TrendingUp      },
   { to: '/admin/tarotistas',   label: 'Tarotistas',   icon: Users           },
   { to: '/admin/solicitudes',  label: 'Solicitudes',  icon: FileText        },
   { to: '/admin/resenas',      label: 'Reseñas',      icon: Star            },

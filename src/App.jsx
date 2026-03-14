@@ -12,6 +12,7 @@ import Terminos from './pages/Terminos'
 import Privacidad from './pages/Privacidad'
 import Cookies from './pages/Cookies'
 import AvisoLegal from './pages/AvisoLegal'
+import GraciasTarotista from './pages/GraciasTarotista'
 import CookieBanner from './components/CookieBanner'
 import RegistrosAkasicos from './pages/RegistrosAkasicos'
 import PagoExitoso from './pages/PagoExitoso'
@@ -23,6 +24,7 @@ import AdminTarotistas from './pages/admin/AdminTarotistas'
 import AdminTarotistasForm from './pages/admin/AdminTarotistasForm'
 import AdminSolicitudes from './pages/admin/AdminSolicitudes'
 import AdminResenas from './pages/admin/AdminResenas'
+import AdminLeads from './pages/admin/AdminLeads'
 import AdminConsultas from './pages/admin/AdminConsultas'
 import { AuthProvider } from './context/AuthContext'
 import './App.css'
@@ -69,6 +71,7 @@ export default function App() {
           <Route path="/privacidad" element={<Privacidad />} />
           <Route path="/cookies" element={<Cookies />} />
           <Route path="/aviso-legal" element={<AvisoLegal />} />
+          <Route path="/gracias-tarotista" element={<GraciasTarotista />} />
           <Route path="/registros-akasicos" element={<RegistrosAkasicos />} />
           <Route path="/pago-exitoso" element={<PagoExitoso />} />
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -78,6 +81,7 @@ export default function App() {
             <Route path="tarotistas/nuevo" element={<AdminTarotistasForm />} />
             <Route path="tarotistas/:id" element={<AdminTarotistasForm />} />
             <Route path="consultas" element={<AdminConsultas />} />
+            <Route path="leads" element={<AdminLeads />} />
             <Route path="solicitudes" element={<AdminSolicitudes />} />
             <Route path="resenas" element={<AdminResenas />} />
           </Route>
