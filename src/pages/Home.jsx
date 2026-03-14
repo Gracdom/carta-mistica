@@ -150,7 +150,7 @@ function Hero({ onOpenModal }) {
         {/* Título */}
         <h1 className="hero-title font-playfair font-bold text-white leading-[1.08] mb-6"
           style={{ fontSize:'clamp(2.8rem,8vw,5.5rem)' }}>
-          Descubrí los secretos<br />
+          Descubre los secretos<br />
           <span className="grad-text">de tu alma</span>
         </h1>
 

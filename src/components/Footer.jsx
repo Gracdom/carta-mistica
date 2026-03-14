@@ -125,10 +125,15 @@ export default function Footer() {
             © 2026 La Carta Mística. Servicio enfocado en Argentina y para toda la comunidad latina en el mundo.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            {['Términos de uso', 'Privacidad', 'Cookies', 'Aviso legal'].map(l => (
-              <a key={l} href="#" className="text-gray-600 hover:text-gray-400 text-xs transition-colors">
-                {l}
-              </a>
+            {[
+              { label: 'Términos de uso', to: '/terminos' },
+              { label: 'Privacidad', to: '/privacidad' },
+              { label: 'Cookies', to: '/cookies' },
+              { label: 'Aviso legal', to: '/aviso-legal' },
+            ].map(({ label, to }) => (
+              <Link key={to} to={to} className="text-gray-600 hover:text-gray-400 text-xs transition-colors">
+                {label}
+              </Link>
             ))}
           </div>
         </div>
