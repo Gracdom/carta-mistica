@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X, Sparkles, ChevronRight, Star, Globe, Phone, Mail, MessageSquare } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -22,7 +22,25 @@ const EXPERIENCIAS = [
 
 const INIT = { nombre: '', email: '', whatsapp: '', pais: '', especialidad: '', experiencia: '', mensaje: '' }
 
-export default function ModalLeadTarotista({ open, onClose }) {
+const inputCls = (err) =>
+  `w-full bg-white/[.04] border rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/60 transition-colors ${
+    err ? 'border-red-500/50' : 'border-white/10'
+  }`
+
+function Field({ id, label, icon: Icon, error: err, children }) {
+  return (
+    <div>
+      <label className="flex items-center gap-1.5 text-xs font-medium text-gray-400 mb-1.5" htmlFor={id}>
+        {Icon && <Icon size={12} className="text-purple-400" />}
+        {label}
+      </label>
+      {children}
+      {err && <p className="text-red-400 text-xs mt-1">{err}</p>}
+    </div>
+  )
+}
+
+const ModalLeadTarotista = memo(function ModalLeadTarotista({ open, onClose }) {
   const navigate   = useNavigate()
   const [form, setForm]       = useState(INIT)
   const [errors, setErrors]   = useState({})
@@ -58,7 +76,6 @@ export default function ModalLeadTarotista({ open, onClose }) {
     setError('')
 
     try {
-      // 1. Guardar en Supabase
       const { error: dbErr } = await supabase.from('leads_tarotistas').insert({
         nombre:       form.nombre.trim(),
         email:        form.email.trim().toLowerCase(),
@@ -71,14 +88,12 @@ export default function ModalLeadTarotista({ open, onClose }) {
       })
       if (dbErr) throw new Error(dbErr.message)
 
-      // 2. Enviar emails via Netlify Function
       await fetch('/.netlify/functions/lead-tarotista', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
 
-      // 3. Redirigir a página de gracias
       onClose()
       navigate('/gracias-tarotista')
     } catch (err) {
@@ -88,22 +103,6 @@ export default function ModalLeadTarotista({ open, onClose }) {
       setLoading(false)
     }
   }
-
-  const Field = ({ id, label, icon: Icon, error: err, children }) => (
-    <div>
-      <label className="flex items-center gap-1.5 text-xs font-medium text-gray-400 mb-1.5" htmlFor={id}>
-        {Icon && <Icon size={12} className="text-purple-400" />}
-        {label}
-      </label>
-      {children}
-      {err && <p className="text-red-400 text-xs mt-1">{err}</p>}
-    </div>
-  )
-
-  const inputCls = (err) =>
-    `w-full bg-white/[.04] border rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/60 transition-colors ${
-      err ? 'border-red-500/50' : 'border-white/10'
-    }`
 
   return (
     <div
@@ -118,7 +117,6 @@ export default function ModalLeadTarotista({ open, onClose }) {
       <div className="relative w-full sm:max-w-lg max-h-[96vh] sm:max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl"
         style={{ background: 'linear-gradient(160deg,#0d0b25 0%,#06041a 100%)', border: '1px solid rgba(139,92,246,.2)' }}>
 
-        {/* Decoración superior */}
         <div className="absolute top-0 left-0 right-0 h-32 pointer-events-none overflow-hidden rounded-t-3xl sm:rounded-t-2xl">
           <div className="absolute -top-4 left-1/4 w-40 h-40 rounded-full opacity-20"
             style={{ background: 'radial-gradient(circle,#7c3aed,transparent 70%)' }} />
@@ -126,7 +124,6 @@ export default function ModalLeadTarotista({ open, onClose }) {
             style={{ background: 'radial-gradient(circle,#4f46e5,transparent 70%)' }} />
         </div>
 
-        {/* Cerrar */}
         <button onClick={onClose}
           className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors"
           style={{ background: 'rgba(255,255,255,.07)' }}>
@@ -134,7 +131,6 @@ export default function ModalLeadTarotista({ open, onClose }) {
         </button>
 
         <div className="relative px-6 sm:px-8 pt-8 pb-8">
-          {/* Header */}
           <div className="mb-6 pr-8">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-8 h-8 rounded-full flex items-center justify-center"
@@ -150,7 +146,6 @@ export default function ModalLeadTarotista({ open, onClose }) {
               Conectá con cientos de consultantes que buscan una guía espiritual. Sin costos de entrada — solo tu talento.
             </p>
 
-            {/* Beneficios rápidos */}
             <div className="flex flex-wrap gap-2 mt-3">
               {['Perfil verificado', 'Clientes nuevos', 'Sin comisiones fijas', '100% online'].map(b => (
                 <span key={b} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full text-purple-300/80"
@@ -161,9 +156,7 @@ export default function ModalLeadTarotista({ open, onClose }) {
             </div>
           </div>
 
-          {/* Formulario */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Nombre + Email */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field id="nombre" label="Nombre completo" icon={null} error={errors.nombre}>
                 <input
@@ -179,7 +172,6 @@ export default function ModalLeadTarotista({ open, onClose }) {
               </Field>
             </div>
 
-            {/* WhatsApp + País */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field id="whatsapp" label="WhatsApp (opcional)" icon={Phone} error={errors.whatsapp}>
                 <input
@@ -198,7 +190,6 @@ export default function ModalLeadTarotista({ open, onClose }) {
               </Field>
             </div>
 
-            {/* Especialidad */}
             <Field id="especialidad" label="Especialidad principal" icon={null} error={errors.especialidad}>
               <select
                 id="especialidad" value={form.especialidad} onChange={e => set('especialidad', e.target.value)}
@@ -209,7 +200,6 @@ export default function ModalLeadTarotista({ open, onClose }) {
               </select>
             </Field>
 
-            {/* Experiencia */}
             <Field id="experiencia" label="Años de experiencia" icon={null} error={errors.experiencia}>
               <div className="flex flex-wrap gap-2">
                 {EXPERIENCIAS.map(ex => (
@@ -226,7 +216,6 @@ export default function ModalLeadTarotista({ open, onClose }) {
               </div>
             </Field>
 
-            {/* Mensaje */}
             <Field id="mensaje" label="¿Qué te motivó a buscar esta plataforma? (opcional)" icon={MessageSquare} error={errors.mensaje}>
               <textarea
                 id="mensaje" rows={3} placeholder="Contanos un poco sobre vos..."
@@ -266,4 +255,6 @@ export default function ModalLeadTarotista({ open, onClose }) {
       </div>
     </div>
   )
-}
+})
+
+export default ModalLeadTarotista

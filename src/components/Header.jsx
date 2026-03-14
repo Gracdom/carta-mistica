@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, X, LogOut, User, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { useLeadModal } from '../context/LeadModalContext'
+import { useLeadModalActions } from '../context/LeadModalContext'
 
 const NAV = [
   { label: 'Inicio', to: '/' },
@@ -15,7 +15,7 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false)
   const { pathname } = useLocation()
   const { user, signOut } = useAuth()
-  const { openLeadModal } = useLeadModal()
+  const { openLeadModal } = useLeadModalActions()
   const isDirectorio = pathname === '/directoriotarot'
   const navigate = useNavigate()
 
