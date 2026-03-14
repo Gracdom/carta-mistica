@@ -76,29 +76,38 @@ const ModalLeadTarotista = memo(function ModalLeadTarotista({ open, onClose }) {
     setError('')
 
     try {
+      // 1. Guardar en Supabase (crítico)
       const { error: dbErr } = await supabase.from('leads_tarotistas').insert({
         nombre:       form.nombre.trim(),
         email:        form.email.trim().toLowerCase(),
         whatsapp:     form.whatsapp.trim() || null,
-        pais:         form.pais,
-        especialidad: form.especialidad,
+        pais:         form.pais || null,
+        especialidad: form.especialidad || null,
         experiencia:  form.experiencia || null,
         mensaje:      form.mensaje.trim() || null,
         estado:       'nuevo',
       })
-      if (dbErr) throw new Error(dbErr.message)
+      if (dbErr) {
+        console.error('Supabase error:', dbErr)
+        throw new Error(dbErr.message)
+      }
 
-      await fetch('/.netlify/functions/lead-tarotista', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
+      // 2. Enviar emails (no crítico — si falla igual redirigimos)
+      try {
+        await fetch('/.netlify/functions/lead-tarotista', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form),
+        })
+      } catch (emailErr) {
+        console.warn('Email no enviado (no crítico):', emailErr)
+      }
 
       onClose()
       navigate('/gracias-tarotista')
     } catch (err) {
-      console.error(err)
-      setError('Hubo un error al enviar. Intentá de nuevo o escribinos a info@cartamistica.com')
+      console.error('handleSubmit error:', err)
+      setError(`Error al enviar: ${err.message || 'intentá de nuevo o escribinos a info@cartamistica.com'}`)
     } finally {
       setLoading(false)
     }
