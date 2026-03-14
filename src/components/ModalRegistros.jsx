@@ -298,21 +298,20 @@ export default function ModalRegistros({ onClose }) {
 
   const siguiente = async () => {
     if (!validar()) return
-    // Guardar en BD al avanzar desde paso 0 (tenemos nombre) en adelante
-    if (paso >= 0) {
-      const nuevoId = await guardarParcial(form, consultaId)
-      if (nuevoId && !consultaId) setConsultaId(nuevoId)
-    }
+    const nuevoId = await guardarParcial(form, consultaId)
+    const idActivo = nuevoId || consultaId
+    if (nuevoId && nuevoId !== consultaId) setConsultaId(nuevoId)
+
     if (paso < TOTAL_PASOS - 1) { irA(paso + 1) }
-    else { handleSubmit() }
+    else { handleSubmit(idActivo) }
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (idParam) => {
     setEstado('analyzing')
     setError('')
+    // Usar el id pasado como parámetro (evita el problema de estado async de React)
+    const id = idParam || consultaId
     try {
-      // Actualizar registro existente con estado 'pendiente' e intenciones finales
-      const id = consultaId
       if (id) {
         await supabase
           .from('consultas_akasicas')
@@ -328,6 +327,8 @@ export default function ModalRegistros({ onClose }) {
           .update({ lectura_teaser: data.teaser, lectura_completa: data.completa, estado: 'preview' })
           .eq('id', id)
       }
+      // Guardar el ID definitivamente en estado para que handlePagar lo use
+      if (id) setConsultaId(id)
       setTeaser(data.teaser)
       setEstado('preview')
     } catch (err) {
@@ -339,9 +340,15 @@ export default function ModalRegistros({ onClose }) {
 
   const handlePagar = async () => {
     setLoadingPago(true)
+    const idFinal = consultaId
+    if (!idFinal) {
+      alert('Error: no se encontró la consulta. Intentá de nuevo.')
+      setLoadingPago(false)
+      return
+    }
     try {
       const { data, error: fnErr } = await supabase.functions.invoke('create-checkout', {
-        body: { consultaId, email: form.email, nombre: form.nombre },
+        body: { consultaId: idFinal, email: form.email, nombre: form.nombre },
       })
       if (fnErr || data?.error) throw new Error(data?.error || fnErr?.message)
       if (data?.url) window.location.href = data.url
