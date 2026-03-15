@@ -186,13 +186,13 @@ Deno.serve(async () => {
       }
     }
 
-    // ── Email 3: 72h después del Email 2 ─────────────────────────────────
+    // ── Email 3: 48h después del Email 2 ─────────────────────────────────
     const { data: pendientes3 } = await supabase
       .from('consultas_akasicas')
       .select('id, nombre, email')
       .eq('estado', 'preview')
       .eq('recovery_step', 2)
-      .lt('recovery_last_sent_at', new Date(now.getTime() - 72 * 60 * 60 * 1000).toISOString())
+      .lt('recovery_last_sent_at', new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString())
 
     for (const c of pendientes3 ?? []) {
       const ok = await sendEmail(
