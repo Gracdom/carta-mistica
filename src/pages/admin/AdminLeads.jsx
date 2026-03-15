@@ -22,6 +22,7 @@ export default function AdminLeads() {
   const [loading, setLoading]   = useState(true)
   const [filtro, setFiltro]     = useState('todos')
   const [expanded, setExpanded] = useState(null)
+  const [resending, setResending] = useState(null)
 
   const load = async () => {
     setLoading(true)
@@ -44,6 +45,34 @@ export default function AdminLeads() {
     if (!confirm('¿Eliminar este lead?')) return
     await supabase.from('leads_tarotistas').delete().eq('id', id)
     setItems(items.filter(i => i.id !== id))
+  }
+
+  const handleReenviarCorreo = async (lead) => {
+    setResending(lead.id)
+    try {
+      const res = await fetch('/.netlify/functions/lead-tarotista', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre:       lead.nombre,
+          email:        lead.email,
+          whatsapp:     lead.whatsapp,
+          pais:         lead.pais,
+          especialidad: lead.especialidad,
+          experiencia:  lead.experiencia,
+          mensaje:      lead.mensaje,
+        }),
+      })
+      if (res.ok) {
+        alert(`Correos reenviados a ${lead.email} y al equipo.`)
+      } else {
+        alert('Error al reenviar. Revisá los logs de Netlify.')
+      }
+    } catch (err) {
+      alert('Error de red al reenviar el correo.')
+    } finally {
+      setResending(null)
+    }
   }
 
   const filtered = filtro === 'todos' ? items : items.filter(i => i.estado === filtro)
@@ -189,11 +218,16 @@ export default function AdminLeads() {
                           {label}
                         </button>
                       ))}
-                      <a href={`mailto:${s.email}`}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition-all ml-auto"
+                      <button
+                        onClick={() => handleReenviarCorreo(s)}
+                        disabled={resending === s.id}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition-all ml-auto disabled:opacity-50"
                         style={{ background: 'rgba(124,58,237,.15)', border: '1px solid rgba(139,92,246,.3)', color: '#c4b5fd' }}>
-                        <Mail size={12} /> Enviar email
-                      </a>
+                        {resending === s.id
+                          ? <><span className="w-3 h-3 border border-purple-400/40 border-t-purple-400 rounded-full animate-spin" /> Enviando…</>
+                          : <><Mail size={12} /> Reenviar correo</>
+                        }
+                      </button>
                       <button onClick={() => handleDelete(s.id)}
                         className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition-all"
                         style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', color: '#6b7280' }}>
