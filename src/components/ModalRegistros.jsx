@@ -69,7 +69,7 @@ function Analizando() {
     return () => { clearInterval(t1); clearInterval(t2) }
   }, [])
   return (
-    <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
+    <div className="flex flex-col items-center justify-center py-12 px-8 text-center">
       <style>{`
         @keyframes orb { to{transform:rotate(360deg)} }
         @keyframes orbR{ to{transform:rotate(-360deg)} }
@@ -118,15 +118,15 @@ function CampoRitual({ preguntaKey, tipo, preguntaTexto, placeholder, valor, onC
   }, [autoFocus, preguntaKey])
 
   return (
-    <div className="flex flex-col items-center justify-center text-center px-6 py-4">
+    <div className="flex flex-col items-center text-center px-6 py-8">
       {/* Pregunta con typewriter */}
-      <p className="font-playfair text-white/80 text-xl sm:text-2xl font-semibold mb-1 min-h-[2rem] leading-snug tracking-wide">
+      <p className="font-playfair text-white/80 text-xl font-semibold leading-snug tracking-wide">
         {shown}
         <span className="inline-block w-0.5 h-5 bg-violet-400/60 ml-1 align-middle animate-pulse" />
       </p>
 
       {/* Input sublínea */}
-      <div className="relative w-full max-w-sm mt-8">
+      <div className="relative w-full max-w-xs mt-8">
         {/* Glow de foco */}
         <div className="absolute -inset-4 rounded-full pointer-events-none transition-all duration-700"
           style={{background: focused ? 'radial-gradient(ellipse 80% 60% at 50% 100%,rgba(109,40,217,.12),transparent)' : 'transparent'}}/>
@@ -140,7 +140,7 @@ function CampoRitual({ preguntaKey, tipo, preguntaTexto, placeholder, valor, onC
           onBlur={() => setFocused(false)}
           onKeyDown={e => e.key === 'Enter' && onEnter()}
           placeholder={placeholder}
-          className="w-full bg-transparent border-0 border-b text-center text-white text-lg sm:text-xl placeholder-white/15 outline-none pb-3 transition-all duration-300 [color-scheme:dark]"
+          className="w-full bg-transparent border-0 border-b text-center text-white text-lg placeholder-white/15 outline-none pb-3 transition-all duration-300 [color-scheme:dark]"
           style={{
             borderBottomColor: focused ? 'rgba(139,92,246,.6)' : 'rgba(255,255,255,.1)',
             boxShadow: focused ? '0 1px 0 rgba(139,92,246,.3)' : 'none',
@@ -148,7 +148,7 @@ function CampoRitual({ preguntaKey, tipo, preguntaTexto, placeholder, valor, onC
           }}
         />
 
-        {/* Indicador de foco */}
+        {/* Indicador de foco animado */}
         <div className="absolute bottom-0 left-1/2 h-px transition-all duration-500 rounded-full"
           style={{
             background: 'rgba(139,92,246,.6)',
@@ -158,7 +158,7 @@ function CampoRitual({ preguntaKey, tipo, preguntaTexto, placeholder, valor, onC
       </div>
 
       {tipo !== 'date' && (
-        <p className="text-white/15 text-xs mt-4">Presioná Enter para continuar</p>
+        <p className="text-white/15 text-xs mt-5">Presioná Enter para continuar</p>
       )}
     </div>
   )
@@ -168,12 +168,12 @@ function CampoRitual({ preguntaKey, tipo, preguntaTexto, placeholder, valor, onC
 function GridIntenciones({ valor, onChange }) {
   const { shown } = useTypewriter('¿Qué desea revelar tu alma?', 40)
   return (
-    <div className="flex flex-col items-center px-4 py-2">
-      <p className="font-playfair text-white/80 text-xl sm:text-2xl font-semibold mb-1 text-center min-h-[2rem] tracking-wide">
+    <div className="flex flex-col items-center px-4 py-4">
+      <p className="font-playfair text-white/80 text-lg font-semibold mb-1 text-center tracking-wide">
         {shown}
         <span className="inline-block w-0.5 h-5 bg-violet-400/60 ml-1 align-middle animate-pulse" />
       </p>
-      <p className="text-white/20 text-xs mb-6 text-center">Elegí todo lo que resuene en este momento</p>
+      <p className="text-white/20 text-xs mb-3 text-center">Elegí todo lo que resuene en este momento</p>
 
       <div className="grid grid-cols-2 gap-2 w-full">
         {INTENCIONES.map(({ label, icon, color }) => {
@@ -183,7 +183,7 @@ function GridIntenciones({ valor, onChange }) {
               key={label}
               type="button"
               onClick={() => onChange(sel ? valor.filter(v => v !== label) : [...valor, label])}
-              className="group relative flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left transition-all duration-300 overflow-hidden"
+              className="group relative flex items-center gap-2 px-3 py-2.5 rounded-xl text-left transition-all duration-300 overflow-hidden"
               style={{
                 background: sel ? `linear-gradient(135deg,${color.replace('.6','.15')},rgba(0,0,0,0))` : 'rgba(255,255,255,.025)',
                 border: `1px solid ${sel ? color.replace('.6','.35') : 'rgba(255,255,255,.06)'}`,
@@ -195,7 +195,7 @@ function GridIntenciones({ valor, onChange }) {
                 <div className="absolute inset-0 pointer-events-none"
                   style={{background:`radial-gradient(circle at 20% 50%,${color.replace('.6','.08')},transparent 60%)`}}/>
               )}
-              <span className="text-xl leading-none relative z-10 transition-all duration-300"
+              <span className="text-lg sm:text-xl leading-none relative z-10 transition-all duration-300"
                 style={{opacity: sel ? 1 : 0.2, textShadow: sel ? `0 0 12px ${color}` : 'none'}}>
                 {icon}
               </span>
@@ -215,7 +215,7 @@ function GridIntenciones({ valor, onChange }) {
       </div>
 
       {valor.length > 0 && (
-        <p className="text-violet-400/40 text-xs text-center mt-4">
+        <p className="text-violet-400/40 text-xs text-center mt-3">
           {valor.length} {valor.length === 1 ? 'intención elegida' : 'intenciones elegidas'}
         </p>
       )}
@@ -359,7 +359,7 @@ export default function ModalRegistros({ onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       style={{background:'rgba(2,1,14,.9)', backdropFilter:'blur(16px)'}}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
@@ -380,19 +380,24 @@ export default function ModalRegistros({ onClose }) {
         .btn-pulse { animation: btnPulse 2.5s ease-in-out infinite }
         .lock-pulse { animation: lockPulse 3s ease-in-out infinite }
         .reveal-glow { animation: revealGlow .6s ease forwards }
+        .modal-scroll::-webkit-scrollbar { display: none }
+        .modal-scroll { -ms-overflow-style: none; scrollbar-width: none }
       `}</style>
 
       <div
-        className="relative w-full sm:max-w-xl max-h-[96vh] sm:max-h-[88vh] overflow-hidden rounded-t-3xl sm:rounded-2xl flex flex-col"
-        style={{background:'#05030f', boxShadow:'0 -8px 100px rgba(109,40,217,.15), 0 0 0 1px rgba(139,92,246,.08)'}}
+        className="relative w-full sm:max-w-xl flex flex-col rounded-t-3xl sm:rounded-2xl sm:mx-4 overflow-hidden"
+        style={{
+          background:'#05030f',
+          boxShadow:'0 -8px 100px rgba(109,40,217,.15), 0 0 0 1px rgba(139,92,246,.08)',
+          maxHeight: 'min(88svh, 88vh)',
+        }}
       >
         {/* ── Partículas de fondo ── */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none rounded-t-3xl sm:rounded-2xl">
           {PARTICLES.map(p => (
             <div key={p.id} className="absolute rounded-full bg-white"
               style={{left:`${p.x}%`,top:`${p.y}%`,width:`${p.s}px`,height:`${p.s}px`,animation:`tw ${p.d}s ${p.dl}s ease-in-out infinite`}}/>
           ))}
-          {/* Símbolos flotantes */}
           {['✦','☽','◈','✧','⟡','∞'].map((s,i) => (
             <span key={i} className="absolute text-white/10 text-2xl select-none pointer-events-none font-light"
               style={{
@@ -406,26 +411,23 @@ export default function ModalRegistros({ onClose }) {
         </div>
 
         {/* Glow top */}
-        <div className="absolute top-0 inset-x-0 h-40 pointer-events-none"
+        <div className="absolute top-0 inset-x-0 h-32 pointer-events-none"
           style={{background:'radial-gradient(ellipse 80% 100% at 50% -5%,rgba(109,40,217,.1),transparent 70%)'}}/>
         <div className="absolute top-0 inset-x-16 h-px pointer-events-none"
           style={{background:'linear-gradient(90deg,transparent,rgba(139,92,246,.25),transparent)'}}/>
 
         {/* Cerrar */}
         <button onClick={onClose}
-          className="absolute top-4 right-4 z-20 w-7 h-7 rounded-full flex items-center justify-center text-white/15 hover:text-white/40 hover:bg-white/5 transition-all">
-          <X size={13}/>
+          className="absolute top-3 right-3 z-20 w-8 h-8 rounded-full flex items-center justify-center text-white/20 hover:text-white/50 hover:bg-white/5 transition-all">
+          <X size={14}/>
         </button>
 
         {/* ── FORM ── */}
         {estado === 'form' && (
           <>
-            {/* Barra de progreso */}
-            <div className="relative px-8 pt-7 pb-4 flex-shrink-0">
-              {/* Símbolo central */}
-              <p className="text-center text-white/10 text-base tracking-[1em] mb-5 select-none">✦ ◈ ☽</p>
-
-              {/* Puntos de progreso */}
+            {/* Barra de progreso — fija arriba */}
+            <div className="relative z-10 px-6 pt-5 pb-3 flex-shrink-0">
+              <p className="text-center text-white/10 text-xs tracking-[.8em] mb-3 select-none">✦ ◈ ☽</p>
               <div className="flex items-center justify-center gap-1.5">
                 {Array.from({length: TOTAL_PASOS}).map((_, i) => (
                   <div key={i} className="transition-all duration-500 rounded-full"
@@ -442,8 +444,8 @@ export default function ModalRegistros({ onClose }) {
               </div>
             </div>
 
-            {/* Zona de contenido animada */}
-            <div className="flex-1 overflow-y-auto flex flex-col justify-center py-4">
+            {/* Zona de contenido — scrollable. min-h-0 es obligatorio para que overflow-y funcione en flexbox */}
+            <div className="relative z-10 flex-1 min-h-0 overflow-y-auto modal-scroll">
               <div
                 key={animKey}
                 className={animDir > 0 ? 's-r' : 's-l'}
@@ -468,8 +470,9 @@ export default function ModalRegistros({ onClose }) {
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="flex-shrink-0 px-8 pb-7 pt-2">
+            {/* Footer — fijo abajo */}
+            <div className="relative z-10 flex-shrink-0 px-6 pt-3 pb-6"
+              style={{borderTop:'1px solid rgba(255,255,255,.04)'}}>
               {error && (
                 <p className="text-red-400/60 text-xs text-center mb-3 px-3 py-2 rounded-lg"
                   style={{background:'rgba(220,38,38,.06)',border:'1px solid rgba(220,38,38,.1)'}}>
@@ -479,18 +482,18 @@ export default function ModalRegistros({ onClose }) {
               <div className={`flex items-center ${paso > 0 ? 'justify-between' : 'justify-end'}`}>
                 {paso > 0 && (
                   <button onClick={() => irA(paso - 1)}
-                    className="text-white/20 hover:text-white/40 text-xs transition-colors px-2 py-1">
+                    className="text-white/25 hover:text-white/50 text-xs transition-colors px-3 py-2">
                     ← Volver
                   </button>
                 )}
                 <button
                   onClick={siguiente}
-                  className="flex items-center gap-2.5 px-6 py-3 rounded-full text-sm font-semibold transition-all hover:opacity-85"
+                  className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all active:scale-95"
                   style={{
-                    background: 'linear-gradient(135deg,rgba(109,40,217,.6),rgba(139,92,246,.4))',
-                    border: '1px solid rgba(139,92,246,.2)',
-                    boxShadow: '0 0 28px rgba(109,40,217,.18)',
-                    color: 'rgba(255,255,255,.8)',
+                    background: 'linear-gradient(135deg,rgba(109,40,217,.7),rgba(139,92,246,.5))',
+                    border: '1px solid rgba(139,92,246,.25)',
+                    boxShadow: '0 0 28px rgba(109,40,217,.2)',
+                    color: 'rgba(255,255,255,.9)',
                   }}>
                   {paso === TOTAL_PASOS - 1
                     ? <><Sparkles size={13} className="text-violet-300"/>Abrir mis Registros</>
@@ -503,85 +506,70 @@ export default function ModalRegistros({ onClose }) {
         )}
 
         {/* ── ANALIZANDO ── */}
-        {estado === 'analyzing' && <Analizando/>}
+        {estado === 'analyzing' && (
+          <div className="flex-1 min-h-0 overflow-y-auto modal-scroll">
+            <Analizando/>
+          </div>
+        )}
 
         {/* ── PREVIEW ── */}
         {estado === 'preview' && (
-          <div className="relative reveal-glow px-6 sm:px-8 pt-6 pb-6">
+          <div className="relative reveal-glow flex-1 min-h-0 overflow-y-auto modal-scroll px-4 sm:px-7 pt-5 pb-6">
             <div className="absolute inset-0 pointer-events-none"
               style={{background:'radial-gradient(ellipse 80% 60% at 50% 100%,rgba(109,40,217,.1),transparent 70%)'}}/>
 
-            {/* Header compacto */}
-            <div className="text-center mb-4">
+            {/* Header */}
+            <div className="text-center mb-4 relative z-10">
               <span className="text-violet-400/30 text-[10px] tracking-widest">✦ ◈ ✦</span>
               <h2 className="font-playfair text-white text-xl font-bold mt-1">
                 Listo, <span style={{background:'linear-gradient(135deg,#c4b5fd,#a78bfa)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>{form.nombre.split(' ')[0]}</span>
               </h2>
             </div>
 
-            {/* Teaser + Bloqueado — lado a lado */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              {/* Teaser */}
-              <div className="relative rounded-xl p-4 overflow-hidden"
-                style={{background:'linear-gradient(135deg,rgba(109,40,217,.12),rgba(79,46,220,.05))',border:'1px solid rgba(139,92,246,.18)'}}>
-                <div className="absolute inset-x-0 h-10 pointer-events-none opacity-20"
-                  style={{background:'linear-gradient(180deg,transparent,rgba(139,92,246,.1),transparent)',animation:'scanline 4s linear infinite'}}/>
-                <p className="text-violet-400/50 text-[9px] uppercase tracking-widest mb-2">✦ Tu mensaje</p>
-                <p className="text-white/65 text-xs leading-relaxed italic line-clamp-5 relative z-10">"{teaser}"</p>
-              </div>
+            {/* Teaser — ancho completo en móvil */}
+            <div className="relative rounded-xl p-4 overflow-hidden mb-3 relative z-10"
+              style={{background:'linear-gradient(135deg,rgba(109,40,217,.12),rgba(79,46,220,.05))',border:'1px solid rgba(139,92,246,.18)'}}>
+              <div className="absolute inset-x-0 h-10 pointer-events-none opacity-20"
+                style={{background:'linear-gradient(180deg,transparent,rgba(139,92,246,.1),transparent)',animation:'scanline 4s linear infinite'}}/>
+              <p className="text-violet-400/50 text-[9px] uppercase tracking-widest mb-2">✦ Vista previa de tu lectura</p>
+              <p className="text-white/65 text-xs leading-relaxed italic relative z-10">"{teaser}"</p>
+            </div>
 
-              {/* Bloqueado */}
-              <div className="relative rounded-xl overflow-hidden lock-pulse"
-                style={{border:'1px solid rgba(139,92,246,.2)'}}>
-                <div className="absolute inset-0"
-                  style={{background:'linear-gradient(135deg,rgba(30,10,60,.92),rgba(10,5,30,.96))'}}/>
-                <div className="absolute inset-0 opacity-25 pointer-events-none"
-                  style={{background:'linear-gradient(90deg,transparent,rgba(139,92,246,.15),transparent)',backgroundSize:'200% 100%',animation:'shimmer 3s linear infinite'}}/>
-                <div className="relative p-4">
-                  <div className="blur-sm select-none pointer-events-none opacity-15 space-y-1 mb-2 text-[10px] text-white leading-relaxed">
-                    <p>Tu misión de vida en esta encarnación...</p>
-                    <p>Los bloqueos kármicos que frenan...</p>
-                    <p>Mensaje de tus Guardianes...</p>
-                  </div>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center"
-                      style={{background:'rgba(109,40,217,.3)',border:'1px solid rgba(139,92,246,.4)'}}>
-                      <span className="text-violet-300 text-sm">◈</span>
-                    </div>
-                    <p className="text-white/40 text-[9px] tracking-widest uppercase">Bloqueado</p>
+            {/* Bloqueado + features en fila */}
+            <div className="relative rounded-xl overflow-hidden lock-pulse mb-3 relative z-10"
+              style={{border:'1px solid rgba(139,92,246,.2)'}}>
+              <div className="absolute inset-0"
+                style={{background:'linear-gradient(135deg,rgba(30,10,60,.92),rgba(10,5,30,.96))'}}/>
+              <div className="absolute inset-0 opacity-20 pointer-events-none"
+                style={{background:'linear-gradient(90deg,transparent,rgba(139,92,246,.15),transparent)',backgroundSize:'200% 100%',animation:'shimmer 3s linear infinite'}}/>
+              <div className="relative p-4 flex items-center gap-4">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{background:'rgba(109,40,217,.3)',border:'1px solid rgba(139,92,246,.4)'}}>
+                  <span className="text-violet-300">◈</span>
+                </div>
+                <div>
+                  <p className="text-white/40 text-[9px] tracking-widest uppercase mb-1">Contenido bloqueado</p>
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                    {['✦ Misión del alma','◈ Bloqueos kármicos','☽ Amor y relaciones','⟡ Guardianes'].map((t,i)=>(
+                      <span key={i} className="text-white/25 text-[9px]">{t}</span>
+                    ))}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Incluye — fila horizontal */}
-            <div className="grid grid-cols-4 gap-1.5 mb-4">
-              {[
-                { icon:'✦', text:'Misión del alma' },
-                { icon:'◈', text:'Bloqueos kármicos' },
-                { icon:'☽', text: form.intenciones[0] ? form.intenciones[0].split(' ')[0]+'…' : 'Intenciones' },
-                { icon:'⟡', text:'Guardianes' },
-              ].map(({icon,text},i)=>(
-                <div key={i} className="flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl text-center"
-                  style={{background:'rgba(255,255,255,.025)',border:'1px solid rgba(255,255,255,.05)'}}>
-                  <span className="text-violet-400/50 text-sm">{icon}</span>
-                  <span className="text-white/35 text-[9px] leading-tight">{text}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Precio + CTA en fila */}
-            <div className="flex items-center gap-3 mb-3">
-              <div className="text-center flex-shrink-0">
+            {/* Precio + CTA */}
+            <div className="relative z-10 flex items-center gap-3 mb-3">
+              <div className="text-center flex-shrink-0 w-14">
                 <p className="font-playfair text-white/85 text-2xl font-bold leading-none">
                   6<span className="text-violet-300/70 text-lg">€</span>
                 </p>
-                <p className="text-white/20 text-[9px] mt-0.5">pago único</p>
+                <p className="text-white/20 text-[9px] mt-0.5">único</p>
               </div>
               <button
                 onClick={handlePagar}
                 disabled={loadingPago}
-                className="btn-pulse relative flex-1 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[.98] disabled:opacity-40 overflow-hidden"
+                className="btn-pulse relative flex-1 py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[.98] disabled:opacity-40 overflow-hidden"
                 style={{background:'linear-gradient(135deg,#6d28d9,#7c3aed,#8b5cf6)',border:'1px solid rgba(167,139,250,.3)',color:'rgba(255,255,255,.95)'}}>
                 <div className="absolute inset-0 pointer-events-none"
                   style={{background:'linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent)',backgroundSize:'200% 100%',animation:'shimmer 2s linear infinite'}}/>
@@ -592,7 +580,7 @@ export default function ModalRegistros({ onClose }) {
               </button>
             </div>
 
-            <p className="text-white/12 text-[9px] text-center">🔒 Pago seguro con Stripe · Enviada a {form.email}</p>
+            <p className="relative z-10 text-white/15 text-[9px] text-center">🔒 Pago seguro con Stripe · {form.email}</p>
           </div>
         )}
       </div>
