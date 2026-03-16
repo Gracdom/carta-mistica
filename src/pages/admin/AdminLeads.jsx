@@ -61,10 +61,14 @@ export default function AdminLeads() {
           mensaje:      lead.mensaje,
         },
       })
-      if (fnErr) throw new Error(fnErr.message)
+      if (fnErr) {
+        console.error('Supabase fnErr:', fnErr)
+        throw new Error(fnErr.message || JSON.stringify(fnErr))
+      }
       alert(`Correos reenviados a ${lead.email} y al equipo.`)
     } catch (err) {
-      alert('Error al reenviar. Revisá los logs de Supabase.')
+      console.error('Reenviar correo error:', err)
+      alert(`Error al reenviar: ${err.message}`)
     } finally {
       setResending(null)
     }
