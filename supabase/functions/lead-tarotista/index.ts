@@ -17,17 +17,18 @@ const fromAddr  = Deno.env.get('EMAIL_FROM') ?? 'La Carta Mística <info@cartami
 
 async function sendEmail(to: string, subject: string, html: string, replyTo?: string) {
   const payload: Record<string, unknown> = { from: fromAddr, to: [to], subject, html }
-  if (replyTo) payload.reply_to = replyTo
+  if (replyTo) payload.reply_to = [replyTo]
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${resendKey}` },
     body: JSON.stringify(payload),
   })
+  const resText = await res.text()
   if (!res.ok) {
-    const text = await res.text()
-    console.error(`Resend error (${to}):`, text)
-    throw new Error(text)
+    console.error(`Resend error (${to}) [${res.status}]:`, resText)
+    throw new Error(`Resend ${res.status}: ${resText}`)
   }
+  console.log(`Email OK -> ${to}`)
 }
 
 function adminHtml(subtitulo: string, cuerpo: string) {
@@ -52,27 +53,24 @@ function clienteHtml(nombre: string) {
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#030312;font-family:Georgia,serif;color:#e2e0ff;">
   <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
-
     <div style="text-align:center;margin-bottom:36px;">
       <p style="color:#a78bfa;letter-spacing:.5em;font-size:14px;margin:0 0 8px;">✦ ☽ ✦</p>
       <h1 style="font-size:26px;color:#ffffff;margin:0 0 8px;font-family:Georgia,serif;">El universo recibió tu señal</h1>
       <p style="color:#7c6fa0;font-size:14px;margin:0;">La Carta Mística · Portal de Tarotistas</p>
     </div>
-
     <div style="background:linear-gradient(135deg,rgba(109,40,217,.18),rgba(139,92,246,.08));border:1px solid rgba(139,92,246,.3);border-radius:16px;padding:28px 24px;margin-bottom:24px;">
       <p style="color:#c4b5fd;font-size:15px;line-height:1.8;margin:0 0 18px;">
         Hola, <strong style="color:#ffffff;">${nombre}</strong> ✨
       </p>
       <p style="color:#d1d5db;font-size:14px;line-height:1.8;margin:0 0 16px;">
-        Tu energía ha llegado hasta nosotros. Recibimos tu solicitud para unirte a 
-        <strong style="color:#a78bfa;">La Carta Mística</strong> como guía espiritual y 
+        Tu energía ha llegado hasta nosotros. Recibimos tu solicitud para unirte a
+        <strong style="color:#a78bfa;">La Carta Mística</strong> como guía espiritual y
         ya está siendo revisada por nuestro equipo.
       </p>
       <p style="color:#9ca3af;font-size:14px;line-height:1.8;margin:0;font-style:italic;">
         "Cada alma que guía a otra, primero debió encontrar su propio camino."
       </p>
     </div>
-
     <div style="background:rgba(255,255,255,.03);border:1px solid rgba(139,92,246,.15);border-radius:12px;padding:20px 24px;margin-bottom:24px;">
       <p style="color:#c4b5fd;font-size:13px;font-weight:600;margin:0 0 14px;letter-spacing:.05em;">LO QUE VIENE AHORA</p>
       <table style="width:100%;border-collapse:collapse;">
@@ -82,7 +80,7 @@ function clienteHtml(nombre: string) {
         </tr>
         <tr>
           <td style="padding:8px 0;vertical-align:top;color:#a78bfa;font-size:16px;">✦</td>
-          <td style="padding:8px 0;color:#d1d5db;font-size:13px;line-height:1.7;">Te contactaremos por email${nombre ? '' : ''} para los siguientes pasos del proceso.</td>
+          <td style="padding:8px 0;color:#d1d5db;font-size:13px;line-height:1.7;">Te contactaremos por email para los siguientes pasos del proceso.</td>
         </tr>
         <tr>
           <td style="padding:8px 0;vertical-align:top;color:#a78bfa;font-size:16px;">✦</td>
@@ -90,7 +88,6 @@ function clienteHtml(nombre: string) {
         </tr>
       </table>
     </div>
-
     <p style="color:#6b7280;font-size:13px;line-height:1.7;text-align:center;margin:0 0 8px;">
       ¿Tienes alguna pregunta? Estamos aquí para ti.
     </p>
@@ -99,10 +96,9 @@ function clienteHtml(nombre: string) {
         Escribirnos por WhatsApp
       </a>
     </p>
-
     <div style="text-align:center;border-top:1px solid rgba(139,92,246,.15);padding-top:24px;">
       <p style="color:#4c3775;font-size:12px;margin:0;">
-        © 2026 La Carta Mística · 
+        © 2026 La Carta Mística ·
         <a href="mailto:info@cartamistica.com" style="color:#7c6fa0;">info@cartamistica.com</a>
       </p>
     </div>
@@ -126,6 +122,10 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: 'Faltan campos requeridos' }), { status: 400, headers: corsHeaders })
   }
 
+  console.log(`Procesando lead: ${nombre} <${email}>`)
+  console.log(`EMAIL_FROM: ${fromAddr}`)
+  console.log(`RESEND_API_KEY presente: ${resendKey ? 'SI' : 'NO'}`)
+
   const filas = [
     ['Nombre',       nombre],
     ['Email',        email],
@@ -139,8 +139,10 @@ Deno.serve(async (req) => {
       <td style="padding:8px 0;color:#ffffff;font-size:14px;">${v}</td>
     </tr>`).join('')
 
+  const errors: string[] = []
+
+  // 1. Notificación interna al equipo
   try {
-    // 1. Notificación interna al equipo (asunto técnico con [Lead Tarotista])
     await sendEmail(
       EQUIPO,
       `[Lead Tarotista] ${nombre} — ${especialidad || 'sin especialidad'}`,
@@ -156,31 +158,38 @@ Deno.serve(async (req) => {
         </a>`),
       email
     )
+  } catch (e) { errors.push(`equipo: ${e}`) }
 
-    // 2. Notificación a Karen (asunto técnico)
+  // 2. Notificación a Karen
+  try {
     await sendEmail(
       NOTIF,
       `[Lead Tarotista] ${nombre} se registró — ${new Date().toLocaleDateString('es-ES')}`,
       adminHtml('Alerta de nuevo lead', `
         <h2 style="color:#fff;font-size:17px;margin:0 0 16px;">¡Nuevo lead de tarotista! 🔔</h2>
         <p style="color:#d1d5db;font-size:14px;line-height:1.7;margin:0 0 16px;">
-          <strong style="color:#a78bfa;">${nombre}</strong> acaba de completar el formulario de registro en La Carta Mística.
+          <strong style="color:#a78bfa;">${nombre}</strong> acaba de completar el formulario.
         </p>
         <table style="width:100%;border-collapse:collapse;">${filas}</table>
         ${mensaje ? `<p style="color:#9ca3af;font-size:13px;margin-top:16px;font-style:italic;">"${mensaje}"</p>` : ''}`),
       email
     )
+  } catch (e) { errors.push(`karen: ${e}`) }
 
-    // 3. Bienvenida esotérica al cliente (sin jerga interna)
+  // 3. Bienvenida esotérica al cliente
+  try {
     await sendEmail(
       email,
       `${nombre}, el universo recibió tu señal ✦`,
       clienteHtml(nombre)
     )
+  } catch (e) { errors.push(`cliente: ${e}`) }
 
-    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: corsHeaders })
-  } catch (err) {
-    console.error('lead-tarotista error:', err)
-    return new Response(JSON.stringify({ error: 'Error al enviar emails' }), { status: 500, headers: corsHeaders })
+  if (errors.length === 3) {
+    // Todos fallaron — devolver error con detalle
+    return new Response(JSON.stringify({ error: errors.join(' | ') }), { status: 500, headers: corsHeaders })
   }
+
+  // Al menos uno llegó — devolver ok con advertencias si las hay
+  return new Response(JSON.stringify({ ok: true, warnings: errors.length ? errors : undefined }), { status: 200, headers: corsHeaders })
 })
