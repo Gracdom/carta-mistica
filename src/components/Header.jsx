@@ -84,8 +84,8 @@ export default function Header() {
           </div>
         )}
 
-        {/* Botón ¿Eres tarotista? — siempre visible en desktop cuando no hay sesión */}
-        {!user && !isDirectorio && (
+        {/* Botón ¿Eres tarotista? — siempre visible en desktop */}
+        {!isDirectorio && (
           <button
             onClick={openLeadModal}
             className="hidden md:flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full transition-all duration-200 flex-shrink-0 hover:brightness-110 active:scale-95"
@@ -149,8 +149,7 @@ export default function Header() {
                 </button>
               </>
             )}
-            {!user && (
-              <button
+            <button
                 onClick={() => { setOpen(false); openLeadModal() }}
                 className="flex items-center justify-center gap-1.5 text-sm font-semibold px-5 py-2.5 rounded-full transition-all"
                 style={{
@@ -160,7 +159,6 @@ export default function Header() {
                 }}>
                 <Sparkles size={13} /> ¿Eres tarotista? Únete
               </button>
-            )}
           </div>
         </div>
       )}
