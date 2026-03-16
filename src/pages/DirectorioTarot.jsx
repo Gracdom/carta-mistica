@@ -60,20 +60,48 @@ const INPUT = 'w-full bg-white/4 border border-white/10 focus:border-purple-500/
 
 export default function DirectorioTarot() {
   const [form, setForm] = useState({
-    nombre: '', email: '', whatsapp: '', pais: 'Argentina',
-    especialidad: '', modelo: 'comision', mensaje: ''
+    nombre: '', email: '', whatsapp: '', pais: '',
+    especialidad: '', experiencia: '', mensaje: ''
   })
-  const [enviado, setEnviado] = useState(false)
+  const [enviado, setEnviado]   = useState(false)
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value })
+
   const handleSubmit = async e => {
     e.preventDefault()
-    await supabase.from('solicitudes_tarotista').insert({
-      nombre: form.nombre, email: form.email, whatsapp: form.whatsapp,
-      pais: form.pais, especialidad: form.especialidad,
-      modelo: form.modelo, mensaje: form.mensaje,
-    })
-    setEnviado(true)
+    if (!form.nombre.trim() || !form.email.trim()) return
+    setLoading(true)
+    setError('')
+    try {
+      // Guardar en leads_tarotistas (misma tabla que el popup)
+      const { error: dbErr } = await supabase.from('leads_tarotistas').insert({
+        nombre:       form.nombre.trim(),
+        email:        form.email.trim().toLowerCase(),
+        whatsapp:     form.whatsapp.trim() || null,
+        pais:         form.pais || null,
+        especialidad: form.especialidad || null,
+        experiencia:  form.experiencia || null,
+        mensaje:      form.mensaje.trim() || null,
+        estado:       'nuevo',
+      })
+      if (dbErr) throw new Error(dbErr.message)
+
+      // Enviar emails via Edge Function (misma que el popup)
+      try {
+        await supabase.functions.invoke('lead-tarotista', { body: form })
+      } catch (emailErr) {
+        console.warn('Email no enviado (no crítico):', emailErr)
+      }
+
+      setEnviado(true)
+    } catch (err) {
+      console.error(err)
+      setError('Hubo un error al enviar. Intentá de nuevo o escribinos a info@cartamistica.com')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -402,9 +430,9 @@ export default function DirectorioTarot() {
                 {enviado ? (
                   <div className="text-center py-10">
                     <div className="text-5xl text-purple-400/70 mb-5" style={{ animation:'floatY 4s ease-in-out infinite' }}>✦</div>
-                    <h3 className="font-playfair text-white text-2xl font-bold mb-3">¡Solicitud enviada!</h3>
+                    <h3 className="font-playfair text-white text-2xl font-bold mb-3">¡El universo recibió tu señal!</h3>
                     <p className="text-gray-400 text-sm leading-relaxed max-w-xs mx-auto">
-                      Tu energía llegó. Nuestro equipo revisará tu solicitud y te contactará en 24-48 hs hábiles.
+                      Tu energía llegó. Nuestro equipo revisará tu solicitud y te contactará en 2-3 días hábiles.
                     </p>
                     <Link to="/"
                       className="inline-flex items-center gap-2 mt-7 text-purple-400 hover:text-purple-300 text-sm font-semibold transition-colors">
@@ -428,15 +456,19 @@ export default function DirectorioTarot() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-gray-300 text-xs font-semibold mb-1.5">WhatsApp / Teléfono</label>
-                        <input type="text" name="whatsapp" value={form.whatsapp} onChange={handleChange}
+                        <label className="block text-gray-300 text-xs font-semibold mb-1.5">WhatsApp (opcional)</label>
+                        <input type="tel" name="whatsapp" value={form.whatsapp} onChange={handleChange}
                           placeholder="+54 9 11 xxxx xxxx" className={INPUT} />
                       </div>
                       <div>
                         <label className="block text-gray-300 text-xs font-semibold mb-1.5">País *</label>
                         <select required name="pais" value={form.pais} onChange={handleChange}
                           className={INPUT + ' [color-scheme:dark]'}>
-                          {['Argentina','Chile','México','Uruguay','Colombia','Perú','España','Otro'].map(p => (
+                          <option value="" disabled>Seleccioná tu país</option>
+                          {['Argentina','México','España','Colombia','Chile','Perú','Venezuela',
+                            'Ecuador','Bolivia','Uruguay','Paraguay','Cuba','Puerto Rico',
+                            'República Dominicana','Guatemala','Honduras','El Salvador',
+                            'Nicaragua','Costa Rica','Panamá','Otro'].map(p => (
                             <option key={p} value={p}>{p}</option>
                           ))}
                         </select>
@@ -444,56 +476,64 @@ export default function DirectorioTarot() {
                     </div>
 
                     <div>
-                      <label className="block text-gray-300 text-xs font-semibold mb-1.5">Principal especialidad</label>
-                      <input type="text" name="especialidad" value={form.especialidad} onChange={handleChange}
-                        placeholder="Ej: Tarot, Amor y Relaciones, Videncia..." className={INPUT} />
+                      <label className="block text-gray-300 text-xs font-semibold mb-1.5">Especialidad principal</label>
+                      <select name="especialidad" value={form.especialidad} onChange={handleChange}
+                        className={INPUT + ' [color-scheme:dark]'}>
+                        <option value="">¿En qué sos especialista?</option>
+                        {['Tarot General','Amor y Relaciones','Llamas Gemelas','Trabajo y Dinero',
+                          'Karma y Vidas Pasadas','Videncia','Registros Akáshicos','Astrología',
+                          'Runas','Numerología','Otro'].map(e => (
+                          <option key={e} value={e}>{e}</option>
+                        ))}
+                      </select>
                     </div>
 
                     <div>
-                      <label className="block text-gray-300 text-xs font-semibold mb-2">Modelo de trabajo preferido</label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {[
-                          { value: 'suscripcion', label: 'Suscripción mensual' },
-                          { value: 'comision',    label: 'Solo comisión (gratis para empezar)' },
-                        ].map(opt => (
-                          <label key={opt.value}
-                            className={`flex items-center gap-2.5 border rounded-xl px-4 py-3 cursor-pointer transition-all ${
-                              form.modelo === opt.value
-                                ? 'border-purple-500/60 bg-purple-700/15'
-                                : 'border-white/10 hover:border-purple-500/30 hover:bg-white/3'
+                      <label className="block text-gray-300 text-xs font-semibold mb-2">Años de experiencia</label>
+                      <div className="flex flex-wrap gap-2">
+                        {['Menos de 1 año','1 a 3 años','3 a 5 años','5 a 10 años','Más de 10 años'].map(ex => (
+                          <button key={ex} type="button"
+                            onClick={() => setForm(f => ({ ...f, experiencia: ex }))}
+                            className={`text-xs px-3 py-1.5 rounded-full border transition-all ${
+                              form.experiencia === ex
+                                ? 'text-white bg-purple-600/25 border-purple-500/60'
+                                : 'text-gray-400 border-white/10 hover:text-white hover:border-white/20'
                             }`}>
-                            <input type="radio" name="modelo" value={opt.value}
-                              checked={form.modelo === opt.value} onChange={handleChange}
-                              className="accent-purple-500" />
-                            <span className="text-gray-300 text-sm">{opt.label}</span>
-                          </label>
+                            {ex}
+                          </button>
                         ))}
                       </div>
                     </div>
 
                     <div>
                       <label className="block text-gray-300 text-xs font-semibold mb-1.5">
-                        Contanos brevemente sobre vos y tu trabajo (opcional)
+                        ¿Qué te motivó a buscar esta plataforma? (opcional)
                       </label>
                       <textarea name="mensaje" value={form.mensaje} onChange={handleChange} rows={3}
-                        placeholder="Años de experiencia, especialidades, estilo de lectura..."
+                        placeholder="Contanos un poco sobre vos..."
                         className={INPUT + ' resize-none'} />
                     </div>
 
-                    <button type="submit"
-                      className="w-full text-white font-semibold py-4 rounded-xl flex items-center justify-center gap-2.5 transition-all"
+                    {error && (
+                      <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">{error}</p>
+                    )}
+
+                    <button type="submit" disabled={loading}
+                      className="w-full text-white font-semibold py-4 rounded-xl flex items-center justify-center gap-2.5 transition-all disabled:opacity-50"
                       style={{ background:'linear-gradient(135deg,#6d28d9,#9333ea)', boxShadow:'0 0 20px rgba(139,92,246,.35),0 4px 15px rgba(0,0,0,.4)' }}
-                      onMouseEnter={e => e.currentTarget.style.boxShadow='0 0 40px rgba(139,92,246,.55),0 4px 15px rgba(0,0,0,.4)'}
+                      onMouseEnter={e => { if(!loading) e.currentTarget.style.boxShadow='0 0 40px rgba(139,92,246,.55),0 4px 15px rgba(0,0,0,.4)' }}
                       onMouseLeave={e => e.currentTarget.style.boxShadow='0 0 20px rgba(139,92,246,.35),0 4px 15px rgba(0,0,0,.4)'}>
-                      <Sparkles size={17} />
-                      Enviar solicitud de registro
+                      {loading
+                        ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        : <><Sparkles size={17} /> Enviar solicitud de registro</>
+                      }
                     </button>
 
                     <p className="text-gray-600 text-xs text-center">
                       Al enviar aceptás nuestros{' '}
-                      <a href="#" className="text-purple-500 hover:text-purple-400 transition-colors">Términos de uso</a>{' '}
+                      <Link to="/terminos" className="text-purple-500 hover:text-purple-400 transition-colors">Términos de uso</Link>{' '}
                       y{' '}
-                      <a href="#" className="text-purple-500 hover:text-purple-400 transition-colors">Política de Privacidad</a>.
+                      <Link to="/privacidad" className="text-purple-500 hover:text-purple-400 transition-colors">Política de Privacidad</Link>.
                     </p>
                   </form>
                 )}
