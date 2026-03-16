@@ -57,6 +57,7 @@ const STATS = [
 ]
 
 const INPUT = 'w-full bg-white/4 border border-white/10 focus:border-purple-500/60 focus:bg-white/6 rounded-xl px-4 py-3 text-white placeholder-gray-500 outline-none transition-all text-sm'
+const SELECT_STYLE = { background: '#0d0b25', backgroundImage: 'none' }
 
 export default function DirectorioTarot() {
   const [form, setForm] = useState({
@@ -463,13 +464,14 @@ export default function DirectorioTarot() {
                       <div>
                         <label className="block text-gray-300 text-xs font-semibold mb-1.5">País *</label>
                         <select required name="pais" value={form.pais} onChange={handleChange}
-                          className={INPUT + ' [color-scheme:dark]'}>
-                          <option value="" disabled>Seleccioná tu país</option>
+                          className={INPUT + ' appearance-none cursor-pointer'}
+                          style={SELECT_STYLE}>
+                          <option value="" disabled className="bg-[#0d0b25]">Seleccioná tu país</option>
                           {['Argentina','México','España','Colombia','Chile','Perú','Venezuela',
                             'Ecuador','Bolivia','Uruguay','Paraguay','Cuba','Puerto Rico',
                             'República Dominicana','Guatemala','Honduras','El Salvador',
                             'Nicaragua','Costa Rica','Panamá','Otro'].map(p => (
-                            <option key={p} value={p}>{p}</option>
+                            <option key={p} value={p} className="bg-[#0d0b25]">{p}</option>
                           ))}
                         </select>
                       </div>
@@ -478,12 +480,13 @@ export default function DirectorioTarot() {
                     <div>
                       <label className="block text-gray-300 text-xs font-semibold mb-1.5">Especialidad principal</label>
                       <select name="especialidad" value={form.especialidad} onChange={handleChange}
-                        className={INPUT + ' [color-scheme:dark]'}>
-                        <option value="">¿En qué sos especialista?</option>
+                        className={INPUT + ' appearance-none cursor-pointer'}
+                        style={SELECT_STYLE}>
+                        <option value="" className="bg-[#0d0b25]">¿En qué sos especialista?</option>
                         {['Tarot General','Amor y Relaciones','Llamas Gemelas','Trabajo y Dinero',
                           'Karma y Vidas Pasadas','Videncia','Registros Akáshicos','Astrología',
                           'Runas','Numerología','Otro'].map(e => (
-                          <option key={e} value={e}>{e}</option>
+                          <option key={e} value={e} className="bg-[#0d0b25]">{e}</option>
                         ))}
                       </select>
                     </div>
