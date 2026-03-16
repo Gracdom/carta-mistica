@@ -72,6 +72,9 @@ Deno.serve(async (req) => {
         <p style="color:#6b7280;font-size:12px;margin-top:20px;text-align:center;">Podés responder directamente a este correo para contactar a ${nombre}.</p>
       </div>`)
 
+    // Pausa para no exceder rate limit de Resend (2 req/seg)
+    await new Promise(r => setTimeout(r, 600))
+
     // 2. Confirmación al usuario
     await sendEmail(email, 'Recibimos tu mensaje — La Carta Mística', `
       <div style="${baseStyle}">

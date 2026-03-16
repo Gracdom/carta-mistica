@@ -160,6 +160,9 @@ Deno.serve(async (req) => {
     )
   } catch (e) { errors.push(`equipo: ${e}`) }
 
+  // Pausa para no exceder rate limit de Resend (2 req/seg)
+  await new Promise(r => setTimeout(r, 600))
+
   // 2. Notificación a Karen
   try {
     await sendEmail(
@@ -175,6 +178,9 @@ Deno.serve(async (req) => {
       email
     )
   } catch (e) { errors.push(`karen: ${e}`) }
+
+  // Pausa para no exceder rate limit de Resend
+  await new Promise(r => setTimeout(r, 600))
 
   // 3. Bienvenida esotérica al cliente
   try {
