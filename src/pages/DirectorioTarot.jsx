@@ -57,7 +57,8 @@ const STATS = [
 ]
 
 const INPUT = 'w-full bg-white/4 border border-white/10 focus:border-purple-500/60 focus:bg-white/6 rounded-xl px-4 py-3 text-white placeholder-gray-500 outline-none transition-all text-sm'
-const SELECT_STYLE = { background: '#0d0b25', backgroundImage: 'none' }
+const SELECT_CLS = 'w-full border border-white/10 focus:border-purple-500/60 rounded-xl px-4 py-3 text-white outline-none transition-all text-sm appearance-none cursor-pointer'
+const SELECT_STYLE = { background: '#0d0b25', backgroundImage: 'none', colorScheme: 'dark' }
 
 export default function DirectorioTarot() {
   const [form, setForm] = useState({
@@ -464,7 +465,7 @@ export default function DirectorioTarot() {
                       <div>
                         <label className="block text-gray-300 text-xs font-semibold mb-1.5">País *</label>
                         <select required name="pais" value={form.pais} onChange={handleChange}
-                          className={INPUT + ' appearance-none cursor-pointer'}
+                          className={SELECT_CLS}
                           style={SELECT_STYLE}>
                           <option value="" disabled className="bg-[#0d0b25]">Seleccioná tu país</option>
                           {['Argentina','México','España','Colombia','Chile','Perú','Venezuela',
@@ -480,7 +481,7 @@ export default function DirectorioTarot() {
                     <div>
                       <label className="block text-gray-300 text-xs font-semibold mb-1.5">Especialidad principal</label>
                       <select name="especialidad" value={form.especialidad} onChange={handleChange}
-                        className={INPUT + ' appearance-none cursor-pointer'}
+                        className={SELECT_CLS}
                         style={SELECT_STYLE}>
                         <option value="" className="bg-[#0d0b25]">¿En qué sos especialista?</option>
                         {['Tarot General','Amor y Relaciones','Llamas Gemelas','Trabajo y Dinero',
