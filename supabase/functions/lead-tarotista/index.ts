@@ -10,7 +10,6 @@
  */
 import { corsHeaders } from '../_shared/cors.ts'
 
-const EQUIPO    = 'info@cartamistica.com'
 const NOTIF     = 'karen.rivera@gracdom.com'
 const resendKey = Deno.env.get('RESEND_API_KEY') ?? ''
 const fromAddr  = Deno.env.get('EMAIL_FROM') ?? 'La Carta Mística <info@cartamistica.com>'
@@ -141,29 +140,7 @@ Deno.serve(async (req) => {
 
   const errors: string[] = []
 
-  // 1. Notificación interna al equipo
-  try {
-    await sendEmail(
-      EQUIPO,
-      `[Lead Tarotista] ${nombre} — ${especialidad || 'sin especialidad'}`,
-      adminHtml('Nueva tarotista interesada en unirse', `
-        <h2 style="color:#fff;font-size:17px;margin:0 0 16px;">Nueva solicitud de tarotista 🌟</h2>
-        <table style="width:100%;border-collapse:collapse;">${filas}</table>
-        ${mensaje ? `
-          <hr style="border:none;border-top:1px solid #ffffff14;margin:20px 0;">
-          <h3 style="color:#d1d5db;font-size:13px;margin:0 0 10px;">Mensaje</h3>
-          <p style="color:#e5e7eb;font-size:14px;line-height:1.7;white-space:pre-wrap;background:#050511;padding:14px;border-radius:8px;border-left:3px solid #7c3aed;">${mensaje}</p>` : ''}
-        <a href="mailto:${email}" style="display:inline-block;margin-top:20px;background:#7c3aed;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;">
-          Responder a ${nombre}
-        </a>`),
-      email
-    )
-  } catch (e) { errors.push(`equipo: ${e}`) }
-
-  // Pausa para no exceder rate limit de Resend (2 req/seg)
-  await new Promise(r => setTimeout(r, 600))
-
-  // 2. Notificación a Karen
+  // 1. Notificación a Karen
   try {
     await sendEmail(
       NOTIF,
@@ -182,7 +159,7 @@ Deno.serve(async (req) => {
   // Pausa para no exceder rate limit de Resend
   await new Promise(r => setTimeout(r, 600))
 
-  // 3. Bienvenida esotérica al cliente
+  // 2. Bienvenida esotérica al cliente
   try {
     await sendEmail(
       email,
