@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabase'import { Mail, Phone, Globe, Sparkles, AlertCircle, Trash2, RefreshCw } from 'lucide-react'
+import { supabase } from '../../lib/supabase'
+import { Mail, Phone, Globe, Sparkles, AlertCircle, Trash2, RefreshCw } from 'lucide-react'
 
 const ESTADOS = {
   nuevo:       { label: 'Nuevo',       bg: 'rgba(124,58,237,.15)', border: 'rgba(139,92,246,.4)', text: '#c4b5fd' },
