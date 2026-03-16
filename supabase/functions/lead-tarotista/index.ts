@@ -1,13 +1,12 @@
 /**
  * Supabase Edge Function — lead-tarotista
  * Envía 3 correos via Resend cuando una tarotista se registra:
- *   1. Notificación a info@cartamistica.com
- *   2. Notificación a karen.rivera@gracdom.com
- *   3. Confirmación a la tarotista
+ *   1. Notificación interna a info@cartamistica.com  (asunto con [Lead Tarotista])
+ *   2. Notificación interna a karen.rivera@gracdom.com
+ *   3. Bienvenida esotérica al email del cliente
  *
- * Secrets requeridos (Supabase → Settings → Edge Functions → Secrets):
- *   RESEND_API_KEY
- *   EMAIL_FROM  (ej: "La Carta Mística <info@cartamistica.com>")
+ * FROM siempre: info@cartamistica.com
+ * Secrets: RESEND_API_KEY, EMAIL_FROM
  */
 import { corsHeaders } from '../_shared/cors.ts'
 
@@ -16,11 +15,13 @@ const NOTIF     = 'karen.rivera@gracdom.com'
 const resendKey = Deno.env.get('RESEND_API_KEY') ?? ''
 const fromAddr  = Deno.env.get('EMAIL_FROM') ?? 'La Carta Mística <info@cartamistica.com>'
 
-async function sendEmail(to: string, subject: string, html: string) {
+async function sendEmail(to: string, subject: string, html: string, replyTo?: string) {
+  const payload: Record<string, unknown> = { from: fromAddr, to: [to], subject, html }
+  if (replyTo) payload.reply_to = replyTo
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${resendKey}` },
-    body: JSON.stringify({ from: fromAddr, to: [to], subject, html }),
+    body: JSON.stringify(payload),
   })
   if (!res.ok) {
     const text = await res.text()
@@ -29,7 +30,7 @@ async function sendEmail(to: string, subject: string, html: string) {
   }
 }
 
-function baseHtml(subtitulo: string, cuerpo: string) {
+function adminHtml(subtitulo: string, cuerpo: string) {
   return `
   <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0d0b2b;color:#e5e7eb;padding:32px;border-radius:12px;">
     <div style="text-align:center;margin-bottom:24px;">
@@ -43,6 +44,71 @@ function baseHtml(subtitulo: string, cuerpo: string) {
       © 2026 La Carta Mística · <a href="mailto:info@cartamistica.com" style="color:#7c3aed;">info@cartamistica.com</a>
     </p>
   </div>`
+}
+
+function clienteHtml(nombre: string) {
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#030312;font-family:Georgia,serif;color:#e2e0ff;">
+  <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+
+    <div style="text-align:center;margin-bottom:36px;">
+      <p style="color:#a78bfa;letter-spacing:.5em;font-size:14px;margin:0 0 8px;">✦ ☽ ✦</p>
+      <h1 style="font-size:26px;color:#ffffff;margin:0 0 8px;font-family:Georgia,serif;">El universo recibió tu señal</h1>
+      <p style="color:#7c6fa0;font-size:14px;margin:0;">La Carta Mística · Portal de Tarotistas</p>
+    </div>
+
+    <div style="background:linear-gradient(135deg,rgba(109,40,217,.18),rgba(139,92,246,.08));border:1px solid rgba(139,92,246,.3);border-radius:16px;padding:28px 24px;margin-bottom:24px;">
+      <p style="color:#c4b5fd;font-size:15px;line-height:1.8;margin:0 0 18px;">
+        Hola, <strong style="color:#ffffff;">${nombre}</strong> ✨
+      </p>
+      <p style="color:#d1d5db;font-size:14px;line-height:1.8;margin:0 0 16px;">
+        Tu energía ha llegado hasta nosotros. Recibimos tu solicitud para unirte a 
+        <strong style="color:#a78bfa;">La Carta Mística</strong> como guía espiritual y 
+        ya está siendo revisada por nuestro equipo.
+      </p>
+      <p style="color:#9ca3af;font-size:14px;line-height:1.8;margin:0;font-style:italic;">
+        "Cada alma que guía a otra, primero debió encontrar su propio camino."
+      </p>
+    </div>
+
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(139,92,246,.15);border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+      <p style="color:#c4b5fd;font-size:13px;font-weight:600;margin:0 0 14px;letter-spacing:.05em;">LO QUE VIENE AHORA</p>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:8px 0;vertical-align:top;width:28px;color:#a78bfa;font-size:16px;">✦</td>
+          <td style="padding:8px 0;color:#d1d5db;font-size:13px;line-height:1.7;">Nuestro equipo revisará tu perfil en los próximos <strong style="color:#fff;">2 a 3 días hábiles</strong>.</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;vertical-align:top;color:#a78bfa;font-size:16px;">✦</td>
+          <td style="padding:8px 0;color:#d1d5db;font-size:13px;line-height:1.7;">Te contactaremos por email${nombre ? '' : ''} para los siguientes pasos del proceso.</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;vertical-align:top;color:#a78bfa;font-size:16px;">✦</td>
+          <td style="padding:8px 0;color:#d1d5db;font-size:13px;line-height:1.7;">Si eres seleccionada, te ayudaremos a crear tu perfil público en la plataforma.</td>
+        </tr>
+      </table>
+    </div>
+
+    <p style="color:#6b7280;font-size:13px;line-height:1.7;text-align:center;margin:0 0 8px;">
+      ¿Tienes alguna pregunta? Estamos aquí para ti.
+    </p>
+    <p style="text-align:center;margin:0 0 32px;">
+      <a href="https://wa.me/34910202911" style="display:inline-block;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;text-decoration:none;padding:12px 28px;border-radius:50px;font-size:14px;font-weight:600;font-family:Arial,sans-serif;">
+        Escribirnos por WhatsApp
+      </a>
+    </p>
+
+    <div style="text-align:center;border-top:1px solid rgba(139,92,246,.15);padding-top:24px;">
+      <p style="color:#4c3775;font-size:12px;margin:0;">
+        © 2026 La Carta Mística · 
+        <a href="mailto:info@cartamistica.com" style="color:#7c6fa0;">info@cartamistica.com</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>`
 }
 
 Deno.serve(async (req) => {
@@ -63,8 +129,8 @@ Deno.serve(async (req) => {
   const filas = [
     ['Nombre',       nombre],
     ['Email',        email],
-    ['WhatsApp',     whatsapp  || '—'],
-    ['País',         pais      || '—'],
+    ['WhatsApp',     whatsapp     || '—'],
+    ['País',         pais         || '—'],
     ['Especialidad', especialidad || '—'],
     ['Experiencia',  experiencia  || '—'],
   ].map(([k, v]) => `
@@ -74,11 +140,11 @@ Deno.serve(async (req) => {
     </tr>`).join('')
 
   try {
-    // 1. Notificación al equipo
+    // 1. Notificación interna al equipo (asunto técnico con [Lead Tarotista])
     await sendEmail(
       EQUIPO,
       `[Lead Tarotista] ${nombre} — ${especialidad || 'sin especialidad'}`,
-      baseHtml('Nueva tarotista interesada en unirse', `
+      adminHtml('Nueva tarotista interesada en unirse', `
         <h2 style="color:#fff;font-size:17px;margin:0 0 16px;">Nueva solicitud de tarotista 🌟</h2>
         <table style="width:100%;border-collapse:collapse;">${filas}</table>
         ${mensaje ? `
@@ -87,44 +153,29 @@ Deno.serve(async (req) => {
           <p style="color:#e5e7eb;font-size:14px;line-height:1.7;white-space:pre-wrap;background:#050511;padding:14px;border-radius:8px;border-left:3px solid #7c3aed;">${mensaje}</p>` : ''}
         <a href="mailto:${email}" style="display:inline-block;margin-top:20px;background:#7c3aed;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;">
           Responder a ${nombre}
-        </a>`)
+        </a>`),
+      email
     )
 
-    // 2. Notificación a Karen
+    // 2. Notificación a Karen (asunto técnico)
     await sendEmail(
       NOTIF,
       `[Lead Tarotista] ${nombre} se registró — ${new Date().toLocaleDateString('es-ES')}`,
-      baseHtml('Alerta de nuevo lead', `
+      adminHtml('Alerta de nuevo lead', `
         <h2 style="color:#fff;font-size:17px;margin:0 0 16px;">¡Nuevo lead de tarotista! 🔔</h2>
         <p style="color:#d1d5db;font-size:14px;line-height:1.7;margin:0 0 16px;">
           <strong style="color:#a78bfa;">${nombre}</strong> acaba de completar el formulario de registro en La Carta Mística.
         </p>
         <table style="width:100%;border-collapse:collapse;">${filas}</table>
-        ${mensaje ? `<p style="color:#9ca3af;font-size:13px;margin-top:16px;font-style:italic;">"${mensaje}"</p>` : ''}`)
+        ${mensaje ? `<p style="color:#9ca3af;font-size:13px;margin-top:16px;font-style:italic;">"${mensaje}"</p>` : ''}`),
+      email
     )
 
-    // 3. Confirmación a la tarotista
+    // 3. Bienvenida esotérica al cliente (sin jerga interna)
     await sendEmail(
       email,
-      '¡Gracias por tu interés! — La Carta Mística',
-      baseHtml('Solicitud recibida', `
-        <h2 style="color:#ffffff;font-size:18px;margin:0 0 12px;">Hola, ${nombre} ✨</h2>
-        <p style="color:#d1d5db;line-height:1.7;font-size:14px;">
-          Recibimos tu solicitud para unirte a <strong style="color:#a78bfa;">La Carta Mística</strong> como tarotista.
-          Estamos emocionadas de tenerte entre las profesionales que consideramos para nuestra plataforma.
-        </p>
-        <div style="background:rgba(124,58,237,.12);border:1px solid rgba(139,92,246,.25);border-radius:10px;padding:18px;margin:20px 0;">
-          <p style="color:#c4b5fd;font-size:13px;font-weight:600;margin:0 0 8px;">¿Qué sigue?</p>
-          <ul style="color:#d1d5db;font-size:13px;line-height:1.8;margin:0;padding-left:18px;">
-            <li>Nuestro equipo revisará tu perfil en los próximos 2-3 días hábiles.</li>
-            <li>Te contactaremos por email (y WhatsApp si lo dejaste) para los siguientes pasos.</li>
-            <li>Si fuiste aprobada, te ayudaremos a configurar tu perfil público.</li>
-          </ul>
-        </div>
-        <p style="color:#9ca3af;font-size:13px;line-height:1.7;">
-          ¿Tenés preguntas? Escribinos a <a href="mailto:info@cartamistica.com" style="color:#a78bfa;">info@cartamistica.com</a>
-          o por WhatsApp al <strong>+34 910 202 911</strong>.
-        </p>`)
+      `${nombre}, el universo recibió tu señal ✦`,
+      clienteHtml(nombre)
     )
 
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers: corsHeaders })
