@@ -359,8 +359,8 @@ export default function ModalRegistros({ onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-      style={{background:'rgba(2,1,14,.9)', backdropFilter:'blur(16px)'}}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{background:'rgba(2,1,14,.92)', backdropFilter:'blur(20px)'}}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <style>{`
@@ -385,15 +385,15 @@ export default function ModalRegistros({ onClose }) {
       `}</style>
 
       <div
-        className="relative w-full sm:max-w-xl flex flex-col rounded-t-3xl sm:rounded-2xl sm:mx-4 overflow-hidden"
+        className="relative w-full max-w-lg flex flex-col rounded-2xl overflow-hidden"
         style={{
           background:'#05030f',
-          boxShadow:'0 -8px 100px rgba(109,40,217,.15), 0 0 0 1px rgba(139,92,246,.08)',
-          maxHeight: 'min(88svh, 88vh)',
+          boxShadow:'0 0 80px rgba(109,40,217,.2), 0 0 0 1px rgba(139,92,246,.1)',
+          maxHeight: 'min(90svh, 90vh)',
         }}
       >
         {/* ── Partículas de fondo ── */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none rounded-t-3xl sm:rounded-2xl">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none rounded-2xl">
           {PARTICLES.map(p => (
             <div key={p.id} className="absolute rounded-full bg-white"
               style={{left:`${p.x}%`,top:`${p.y}%`,width:`${p.s}px`,height:`${p.s}px`,animation:`tw ${p.d}s ${p.dl}s ease-in-out infinite`}}/>
@@ -471,7 +471,7 @@ export default function ModalRegistros({ onClose }) {
             </div>
 
             {/* Footer — fijo abajo */}
-            <div className="relative z-10 flex-shrink-0 px-6 pt-3 pb-6"
+            <div className="relative z-10 flex-shrink-0 px-5 pt-3 pb-5"
               style={{borderTop:'1px solid rgba(255,255,255,.04)'}}>
               {error && (
                 <p className="text-red-400/60 text-xs text-center mb-3 px-3 py-2 rounded-lg"
@@ -479,28 +479,40 @@ export default function ModalRegistros({ onClose }) {
                   {error}
                 </p>
               )}
-              <div className={`flex items-center ${paso > 0 ? 'justify-between' : 'justify-end'}`}>
-                {paso > 0 && (
+              {paso > 0 ? (
+                <div className="flex items-center justify-between">
                   <button onClick={() => irA(paso - 1)}
                     className="text-white/25 hover:text-white/50 text-xs transition-colors px-3 py-2">
                     ← Volver
                   </button>
-                )}
+                  <button
+                    onClick={siguiente}
+                    className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all active:scale-95"
+                    style={{
+                      background: 'linear-gradient(135deg,rgba(109,40,217,.7),rgba(139,92,246,.5))',
+                      border: '1px solid rgba(139,92,246,.25)',
+                      boxShadow: '0 0 28px rgba(109,40,217,.2)',
+                      color: 'rgba(255,255,255,.9)',
+                    }}>
+                    {paso === TOTAL_PASOS - 1
+                      ? <><Sparkles size={13} className="text-violet-300"/>Abrir mis Registros</>
+                      : <>Continuar <ArrowRight size={13}/></>
+                    }
+                  </button>
+                </div>
+              ) : (
                 <button
                   onClick={siguiente}
-                  className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all active:scale-95"
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full text-sm font-semibold transition-all active:scale-95"
                   style={{
                     background: 'linear-gradient(135deg,rgba(109,40,217,.7),rgba(139,92,246,.5))',
                     border: '1px solid rgba(139,92,246,.25)',
                     boxShadow: '0 0 28px rgba(109,40,217,.2)',
                     color: 'rgba(255,255,255,.9)',
                   }}>
-                  {paso === TOTAL_PASOS - 1
-                    ? <><Sparkles size={13} className="text-violet-300"/>Abrir mis Registros</>
-                    : <>Continuar <ArrowRight size={13}/></>
-                  }
+                  Continuar <ArrowRight size={13}/>
                 </button>
-              </div>
+              )}
             </div>
           </>
         )}
