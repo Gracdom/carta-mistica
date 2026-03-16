@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ChevronDown, ChevronUp, Mail, MessageCircle, Clock, CheckCircle, Send, HelpCircle, Shield, CreditCard, User } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import { supabase } from '../lib/supabase'
 
 const FAQS = [
   {
@@ -122,12 +123,10 @@ export default function Soporte() {
     setEnviando(true)
     setError('')
     try {
-      const res = await fetch('/.netlify/functions/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+      const { error: fnErr } = await supabase.functions.invoke('send-email', {
+        body: form,
       })
-      if (!res.ok) throw new Error()
+      if (fnErr) throw new Error(fnErr.message)
       setEnviado(true)
     } catch {
       setError('Hubo un problema al enviar el mensaje. Intentá de nuevo o escribinos a info@cartamistica.com.')

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabase'
-import { Mail, Phone, Globe, Sparkles, AlertCircle, Trash2, RefreshCw } from 'lucide-react'
+import { supabase } from '../../lib/supabase'import { Mail, Phone, Globe, Sparkles, AlertCircle, Trash2, RefreshCw } from 'lucide-react'
 
 const ESTADOS = {
   nuevo:       { label: 'Nuevo',       bg: 'rgba(124,58,237,.15)', border: 'rgba(139,92,246,.4)', text: '#c4b5fd' },
@@ -50,10 +49,8 @@ export default function AdminLeads() {
   const handleReenviarCorreo = async (lead) => {
     setResending(lead.id)
     try {
-      const res = await fetch('/.netlify/functions/lead-tarotista', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const { error: fnErr } = await supabase.functions.invoke('lead-tarotista', {
+        body: {
           nombre:       lead.nombre,
           email:        lead.email,
           whatsapp:     lead.whatsapp,
@@ -61,15 +58,12 @@ export default function AdminLeads() {
           especialidad: lead.especialidad,
           experiencia:  lead.experiencia,
           mensaje:      lead.mensaje,
-        }),
+        },
       })
-      if (res.ok) {
-        alert(`Correos reenviados a ${lead.email} y al equipo.`)
-      } else {
-        alert('Error al reenviar. Revisá los logs de Netlify.')
-      }
+      if (fnErr) throw new Error(fnErr.message)
+      alert(`Correos reenviados a ${lead.email} y al equipo.`)
     } catch (err) {
-      alert('Error de red al reenviar el correo.')
+      alert('Error al reenviar. Revisá los logs de Supabase.')
     } finally {
       setResending(null)
     }

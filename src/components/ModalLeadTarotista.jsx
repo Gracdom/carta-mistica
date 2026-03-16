@@ -92,13 +92,9 @@ const ModalLeadTarotista = memo(function ModalLeadTarotista({ open, onClose }) {
         throw new Error(dbErr.message)
       }
 
-      // 2. Enviar emails (no crítico — si falla igual redirigimos)
+      // 2. Enviar emails via Supabase Edge Function (no crítico — si falla igual redirigimos)
       try {
-        await fetch('/.netlify/functions/lead-tarotista', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(form),
-        })
+        await supabase.functions.invoke('lead-tarotista', { body: form })
       } catch (emailErr) {
         console.warn('Email no enviado (no crítico):', emailErr)
       }
