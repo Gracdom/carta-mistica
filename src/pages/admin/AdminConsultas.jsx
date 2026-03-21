@@ -47,16 +47,22 @@ function LecturaBlock({ titulo, contenido }) {
 export default function AdminConsultas() {
   const [items, setItems]       = useState([])
   const [loading, setLoading]   = useState(true)
+  const [dbError, setDbError]   = useState(null)
   const [buscar, setBuscar]     = useState('')
   const [filtro, setFiltro]     = useState('todos')
   const [expanded, setExpanded] = useState(null)
 
   const load = async () => {
     setLoading(true)
-    const { data } = await supabase
+    setDbError(null)
+    const { data, error } = await supabase
       .from('consultas_akasicas')
       .select('*')
       .order('created_at', { ascending: false })
+    if (error) {
+      console.error('[AdminConsultas] error:', error)
+      setDbError(error.message || error.code || 'Error desconocido')
+    }
     setItems(data ?? [])
     setLoading(false)
   }
@@ -146,9 +152,28 @@ export default function AdminConsultas() {
 
       {/* Lista */}
       {loading ? (
-        <div className="text-center py-16 text-gray-600">Cargando...</div>
+        <div className="text-center py-16 text-gray-600 flex flex-col items-center gap-3">
+          <div className="w-6 h-6 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"/>
+          Cargando...
+        </div>
+      ) : dbError ? (
+        <div className="rounded-xl p-6 text-center" style={{background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)'}}>
+          <p className="text-red-400 font-semibold mb-1">Error al cargar los datos</p>
+          <p className="text-red-400/70 text-sm font-mono mb-4">{dbError}</p>
+          <p className="text-gray-500 text-xs mb-4">
+            Probable causa: falta la política RLS <code className="text-purple-300">manage_authenticated</code> en la tabla <code className="text-purple-300">consultas_akasicas</code>.<br/>
+            Ejecutá el SQL de políticas en el Supabase SQL Editor e intentá de nuevo.
+          </p>
+          <button onClick={load}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-80"
+            style={{background:'rgba(139,92,246,.3)',border:'1px solid rgba(139,92,246,.4)'}}>
+            Reintentar
+          </button>
+        </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-gray-600">No hay consultas que coincidan</div>
+        <div className="text-center py-16 text-gray-600">
+          {items.length === 0 ? 'Aún no hay consultas registradas' : 'No hay consultas que coincidan con el filtro'}
+        </div>
       ) : (
         <div className="space-y-3">
           {filtered.map(c => (

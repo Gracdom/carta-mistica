@@ -20,16 +20,22 @@ const FILTROS = [
 export default function AdminLeads() {
   const [items, setItems]       = useState([])
   const [loading, setLoading]   = useState(true)
+  const [dbError, setDbError]   = useState(null)
   const [filtro, setFiltro]     = useState('todos')
   const [expanded, setExpanded] = useState(null)
   const [resending, setResending] = useState(null)
 
   const load = async () => {
     setLoading(true)
-    const { data } = await supabase
+    setDbError(null)
+    const { data, error } = await supabase
       .from('leads_tarotistas')
       .select('*')
       .order('created_at', { ascending: false })
+    if (error) {
+      console.error('[AdminLeads] error:', error)
+      setDbError(error.message || error.code || 'Error desconocido')
+    }
     setItems(data ?? [])
     setLoading(false)
   }
@@ -132,10 +138,26 @@ export default function AdminLeads() {
         <div className="flex items-center justify-center h-48">
           <div className="w-6 h-6 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
         </div>
+      ) : dbError ? (
+        <div className="rounded-xl p-6 text-center" style={{background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)'}}>
+          <AlertCircle size={24} className="text-red-400 mx-auto mb-3" />
+          <p className="text-red-400 font-semibold mb-1">Error al cargar los datos</p>
+          <p className="text-red-400/70 text-sm font-mono mb-4">{dbError}</p>
+          <p className="text-gray-500 text-xs mb-4">
+            Ejecutá el SQL de políticas RLS en Supabase SQL Editor e intentá de nuevo.
+          </p>
+          <button onClick={load}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
+            style={{background:'rgba(139,92,246,.3)',border:'1px solid rgba(139,92,246,.4)'}}>
+            Reintentar
+          </button>
+        </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
           <AlertCircle size={24} className="text-gray-600 mx-auto mb-3" />
-          <p className="text-gray-500 text-sm">No hay leads {filtro !== 'todos' ? `"${filtro}"` : ''}</p>
+          <p className="text-gray-500 text-sm">
+            {items.length === 0 ? 'Aún no hay leads registrados' : `No hay leads "${filtro}"`}
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
