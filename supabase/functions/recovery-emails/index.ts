@@ -134,13 +134,67 @@ function email3Html(nombre: string) {
     </div>`)
 }
 
+const ok  = (body: object) => new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } })
+const err = (msg: string, status = 500) => new Response(JSON.stringify({ ok: false, error: msg }), { status, headers: { 'Content-Type': 'application/json' } })
+
+// ── Envío manual de email de recuperación a una consulta específica ───────────
+async function enviarManual(consultaId: string, step: number) {
+  const { data: c, error } = await supabase
+    .from('consultas_akasicas')
+    .select('id, nombre, email, lectura_teaser, recovery_step')
+    .eq('id', consultaId)
+    .single()
+
+  if (error || !c) return { ok: false, error: 'Consulta no encontrada' }
+  if (!c.email)     return { ok: false, error: 'El consultante no tiene email registrado' }
+
+  const now = new Date().toISOString()
+  let subject = '', html = ''
+
+  if (step === 1) {
+    subject = `✦ Tu Registro Akáshico está esperando, ${c.nombre}`
+    html    = email1Html(c.nombre, c.lectura_teaser ?? '')
+  } else if (step === 2) {
+    subject = `☽ ${c.nombre}, hay algo que debés saber`
+    html    = email2Html(c.nombre)
+  } else if (step === 3) {
+    subject = `⚠️ Último aviso — el portal de ${c.nombre} está por cerrarse`
+    html    = email3Html(c.nombre)
+  } else {
+    return { ok: false, error: `Step inválido: ${step}. Usá 1, 2 o 3.` }
+  }
+
+  const sent = await sendEmail(c.email, subject, html)
+  if (!sent) return { ok: false, error: 'Resend devolvió un error. Revisá la API key.' }
+
+  // Actualizar el paso de recovery en la BD
+  await supabase.from('consultas_akasicas')
+    .update({ recovery_step: step, recovery_last_sent_at: now })
+    .eq('id', consultaId)
+
+  console.log(`[recovery-manual] Email ${step} enviado a ${c.email}`)
+  return { ok: true, enviado: 1, email: c.email, step }
+}
+
 // ── Handler principal ─────────────────────────────────────────────────────────
-Deno.serve(async () => {
+Deno.serve(async (req) => {
   const now = new Date()
+
+  // ── Modo manual: body con consultaId ──────────────────────────────────────
+  let body: Record<string, unknown> = {}
+  try { body = await req.json() } catch { /* sin body → modo cron */ }
+
+  if (body?.consultaId) {
+    const step = Number(body.emailStep ?? 1)
+    const result = await enviarManual(String(body.consultaId), step)
+    return result.ok ? ok(result) : err(result.error ?? 'Error', 400)
+  }
+
+  // ── Modo cron: procesar todos los pendientes ───────────────────────────────
   let enviados = 0
 
   try {
-    // ── Email 1: 1h después del teaser, aún no enviado ────────────────────
+    // Email 1: 1h después del teaser
     const { data: pendientes1 } = await supabase
       .from('consultas_akasicas')
       .select('id, nombre, email, lectura_teaser')
@@ -151,12 +205,12 @@ Deno.serve(async () => {
       .lt('updated_at', new Date(now.getTime() - 60 * 60 * 1000).toISOString())
 
     for (const c of pendientes1 ?? []) {
-      const ok = await sendEmail(
+      const sent = await sendEmail(
         c.email,
         `✦ Tu Registro Akáshico está esperando, ${c.nombre}`,
         email1Html(c.nombre, c.lectura_teaser ?? '')
       )
-      if (ok) {
+      if (sent) {
         await supabase.from('consultas_akasicas')
           .update({ recovery_step: 1, recovery_last_sent_at: now.toISOString() })
           .eq('id', c.id)
@@ -164,7 +218,7 @@ Deno.serve(async () => {
       }
     }
 
-    // ── Email 2: 24h después del Email 1 ─────────────────────────────────
+    // Email 2: 24h después del Email 1
     const { data: pendientes2 } = await supabase
       .from('consultas_akasicas')
       .select('id, nombre, email')
@@ -173,12 +227,12 @@ Deno.serve(async () => {
       .lt('recovery_last_sent_at', new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString())
 
     for (const c of pendientes2 ?? []) {
-      const ok = await sendEmail(
+      const sent = await sendEmail(
         c.email,
         `☽ ${c.nombre}, hay algo que debés saber`,
         email2Html(c.nombre)
       )
-      if (ok) {
+      if (sent) {
         await supabase.from('consultas_akasicas')
           .update({ recovery_step: 2, recovery_last_sent_at: now.toISOString() })
           .eq('id', c.id)
@@ -186,7 +240,7 @@ Deno.serve(async () => {
       }
     }
 
-    // ── Email 3: 48h después del Email 2 ─────────────────────────────────
+    // Email 3: 48h después del Email 2
     const { data: pendientes3 } = await supabase
       .from('consultas_akasicas')
       .select('id, nombre, email')
@@ -195,12 +249,12 @@ Deno.serve(async () => {
       .lt('recovery_last_sent_at', new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString())
 
     for (const c of pendientes3 ?? []) {
-      const ok = await sendEmail(
+      const sent = await sendEmail(
         c.email,
         `⚠️ Último aviso — el portal de ${c.nombre} está por cerrarse`,
         email3Html(c.nombre)
       )
-      if (ok) {
+      if (sent) {
         await supabase.from('consultas_akasicas')
           .update({ recovery_step: 3, recovery_last_sent_at: now.toISOString() })
           .eq('id', c.id)
@@ -208,14 +262,10 @@ Deno.serve(async () => {
       }
     }
 
-    console.log(`Recovery emails: ${enviados} enviados`)
-    return new Response(JSON.stringify({ ok: true, enviados }), {
-      headers: { 'Content-Type': 'application/json' }
-    })
-  } catch (err) {
-    console.error('Recovery error:', err)
-    return new Response(JSON.stringify({ ok: false, error: String(err) }), {
-      status: 500, headers: { 'Content-Type': 'application/json' }
-    })
+    console.log(`[recovery-cron] ${enviados} emails enviados`)
+    return ok({ ok: true, enviados })
+  } catch (e) {
+    console.error('Recovery cron error:', e)
+    return err(String(e))
   }
 })

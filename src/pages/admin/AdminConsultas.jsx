@@ -218,14 +218,24 @@ export default function AdminConsultas() {
   }
 
   const handleRecovery = async (c) => {
-    if (!c.email) return alert('Este consultante no tiene email.')
+    if (!c.email) return alert('Este consultante no tiene email registrado.')
+    // El siguiente paso de recovery a enviar (siempre al menos el 1)
+    const nextStep = Math.min((c.recovery_step ?? 0) + 1, 3)
+    if (!confirm(`¿Enviar el Email de recuperación #${nextStep} a ${c.email}?`)) return
     setSendingRecovery(true)
     try {
-      const { error } = await supabase.functions.invoke('recovery-emails', {
-        body: { consultaId: c.id, manual: true },
+      const { data, error } = await supabase.functions.invoke('recovery-emails', {
+        body: { consultaId: c.id, emailStep: nextStep },
       })
       if (error) throw new Error(error.message)
-      alert(`Email de recuperación enviado a ${c.email}`)
+      if (data?.error) throw new Error(data.error)
+      // Actualizar el item localmente para reflejar el nuevo step
+      setItems(prev => prev.map(i => i.id === c.id
+        ? { ...i, recovery_step: nextStep, recovery_last_sent_at: new Date().toISOString() }
+        : i
+      ))
+      if (selected?.id === c.id) setSelected(s => ({ ...s, recovery_step: nextStep }))
+      alert(`✓ Email #${nextStep} enviado a ${c.email}`)
     } catch (e) {
       alert(`Error al enviar: ${e.message}`)
     } finally {
