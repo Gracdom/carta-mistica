@@ -1,27 +1,35 @@
 /**
  * Supabase Edge Function — Registros Akáshicos
  * Llama a OpenAI GPT-4o-mini para generar una lectura personalizada.
- * Devuelve { teaser, completa }
+ * Devuelve siempre HTTP 200 con { teaser, completa } o { error: "..." }
+ * para que el cliente Supabase pueda leer el cuerpo en caso de error.
  *
  * Secrets necesarios (Supabase → Settings → Edge Functions → Secrets):
  *   OPENAI_API_KEY
  */
 import { corsHeaders } from '../_shared/cors.ts'
 
+const ok  = (body: object) =>
+  new Response(JSON.stringify(body), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+
+const err = (msg: string, detail = '') => {
+  console.error('[akasicos]', msg, detail)
+  return ok({ error: msg })
+}
+
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const { nombre, fechaNacimiento, lugar, pregunta } = await req.json()
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
+    if (!OPENAI_API_KEY) return err('Configuración incompleta: falta OPENAI_API_KEY.')
 
-    if (!nombre || !fechaNacimiento || !pregunta) {
-      return new Response(
-        JSON.stringify({ error: 'Faltan campos obligatorios' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    const body = await req.json().catch(() => ({}))
+    const { nombre, fechaNacimiento, lugar, pregunta } = body
+
+    if (!nombre?.trim())         return err('Falta el nombre del consultante.')
+    if (!fechaNacimiento?.trim()) return err('Falta la fecha de nacimiento.')
+    if (!pregunta?.trim())       return err('Falta la intención o pregunta.')
 
     const SYSTEM_PROMPT = `Eres un canal espiritual especializado en la lectura de los Registros Akáshicos.
 Hablas en primera persona dirigiéndote directamente al consultante con un tono cálido, sabio y revelador.
@@ -60,7 +68,7 @@ Genera la lectura en el siguiente formato EXACTO:
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
@@ -74,30 +82,26 @@ Genera la lectura en el siguiente formato EXACTO:
     })
 
     if (!openaiRes.ok) {
-      const err = await openaiRes.text()
-      console.error('OpenAI error:', err)
-      return new Response(
-        JSON.stringify({ error: 'Error al consultar los registros. Intentá de nuevo.' }),
-        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      const detail = await openaiRes.text()
+      console.error('[akasicos] OpenAI error:', openaiRes.status, detail)
+      if (openaiRes.status === 401) return err('API Key de OpenAI inválida o no configurada.')
+      if (openaiRes.status === 429) return err('Los Registros están muy demandados en este momento. Intentá en unos segundos.')
+      if (openaiRes.status === 402) return err('Créditos de OpenAI agotados. Contactá al administrador.')
+      return err('Los Registros no pudieron abrirse en este momento. Intentá de nuevo.')
     }
 
     const data  = await openaiRes.json()
     const texto = data.choices?.[0]?.message?.content ?? ''
 
+    if (!texto) return err('La lectura llegó vacía. Intentá de nuevo.')
+
     const [teaserPart, completaPart] = texto.split('[LECTURA_COMPLETA]')
     const teaser   = teaserPart.replace('[TEASER]', '').trim()
     const completa = (completaPart ?? '').trim()
 
-    return new Response(
-      JSON.stringify({ teaser, completa }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  } catch (err) {
-    console.error(err)
-    return new Response(
-      JSON.stringify({ error: 'Error interno del servidor.' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return ok({ teaser, completa })
+
+  } catch (e) {
+    return err('Error interno al procesar la lectura.', String(e))
   }
 })

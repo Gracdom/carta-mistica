@@ -311,7 +311,6 @@ export default function ModalRegistros({ onClose }) {
   const handleSubmit = async (idParam) => {
     setEstado('analyzing')
     setError('')
-    // Usar el id pasado como parámetro (evita el problema de estado async de React)
     const id = idParam || consultaId
     try {
       if (id) {
@@ -320,23 +319,35 @@ export default function ModalRegistros({ onClose }) {
           .update({ intenciones: form.intenciones, estado: 'pendiente' })
           .eq('id', id)
       }
+
       const { data, error: fnErr } = await supabase.functions.invoke('akasicos', {
-        body: { nombre: form.nombre, fechaNacimiento: form.fechaNacimiento, lugar: form.lugar, pregunta: form.intenciones.join(', ') },
+        body: {
+          nombre:          form.nombre,
+          fechaNacimiento: form.fechaNacimiento,
+          lugar:           form.lugar,
+          pregunta:        form.intenciones.join(', '),
+        },
       })
-      if (fnErr || data?.error) throw new Error(data?.error || fnErr?.message || 'Error al consultar los registros.')
+
+      // La función siempre devuelve 200; los errores vienen en data.error
+      const errorMsg = data?.error || fnErr?.message
+      if (errorMsg) throw new Error(errorMsg)
+
+      if (!data?.teaser) throw new Error('La lectura llegó incompleta. Intentá de nuevo.')
+
       if (id) {
         await supabase.from('consultas_akasicas')
           .update({ lectura_teaser: data.teaser, lectura_completa: data.completa, estado: 'preview' })
           .eq('id', id)
       }
-      // Guardar el ID definitivamente en estado para que handlePagar lo use
       if (id) setConsultaId(id)
       setTeaser(data.teaser)
       setEstado('preview')
-    } catch (err) {
-      setError(err.message || 'Ocurrió un error. Intentá de nuevo.')
+    } catch (e) {
+      console.error('[ModalRegistros] handleSubmit error:', e)
+      setError(e.message || 'Los Registros no pudieron abrirse. Intentá de nuevo.')
       setEstado('form')
-      setPaso(0)
+      setPaso(4) // volver al paso de intenciones, no al inicio
     }
   }
 
