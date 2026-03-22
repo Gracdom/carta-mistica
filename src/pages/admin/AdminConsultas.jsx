@@ -225,7 +225,7 @@ export default function AdminConsultas() {
     setSendingRecovery(true)
     try {
       const { data, error } = await supabase.functions.invoke('recovery-emails', {
-        body: { consultaId: c.id, emailStep: nextStep },
+        body: { consultaId: c.id, email: c.email, emailStep: nextStep },
       })
       if (error) throw new Error(error.message)
       if (data?.error) throw new Error(data.error)

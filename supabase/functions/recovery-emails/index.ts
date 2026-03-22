@@ -148,14 +148,46 @@ const err = (msg: string) =>
   })
 
 // ── Envío manual de email de recuperación a una consulta específica ───────────
-async function enviarManual(consultaId: string, step: number) {
-  const { data: c, error } = await supabase
-    .from('consultas_akasicas')
-    .select('id, nombre, email, lectura_teaser, recovery_step')
-    .eq('id', consultaId)
-    .single()
+async function enviarManual(consultaId: string, step: number, emailFallback?: string) {
+  const id = consultaId.trim()
+  let c: { id: string; nombre: string; email: string | null; lectura_teaser: string | null; recovery_step: number | null } | null = null
 
-  if (error || !c) return { ok: false, error: 'Consulta no encontrada' }
+  // Intento principal: búsqueda por ID exacto
+  if (id) {
+    const { data } = await supabase
+      .from('consultas_akasicas')
+      .select('id, nombre, email, lectura_teaser, recovery_step')
+      .eq('id', id)
+      .maybeSingle()
+    c = data
+  }
+
+  // Fallback: algunos clientes envían ID abreviado (ej. primeros 8 chars)
+  if (!c && id.length >= 6 && !id.includes('-')) {
+    const { data } = await supabase
+      .from('consultas_akasicas')
+      .select('id, nombre, email, lectura_teaser, recovery_step')
+      .order('created_at', { ascending: false })
+      .limit(300)
+
+    if (Array.isArray(data)) {
+      c = data.find((row) => row.id?.toLowerCase().startsWith(id.toLowerCase())) ?? null
+    }
+  }
+
+  // Fallback: si no aparece por ID, intentar por email (última consulta)
+  if (!c && emailFallback?.trim()) {
+    const { data } = await supabase
+      .from('consultas_akasicas')
+      .select('id, nombre, email, lectura_teaser, recovery_step')
+      .eq('email', emailFallback.trim().toLowerCase())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    c = data
+  }
+
+  if (!c) return { ok: false, error: 'Consulta no encontrada (ID/email).' }
   if (!c.email)     return { ok: false, error: 'El consultante no tiene email registrado' }
 
   const now = new Date().toISOString()
@@ -180,10 +212,10 @@ async function enviarManual(consultaId: string, step: number) {
   // Actualizar el paso de recovery en la BD
   await supabase.from('consultas_akasicas')
     .update({ recovery_step: step, recovery_last_sent_at: now })
-    .eq('id', consultaId)
+    .eq('id', c.id)
 
   console.log(`[recovery-manual] Email ${step} enviado a ${c.email}`)
-  return { ok: true, enviado: 1, email: c.email, step }
+  return { ok: true, enviado: 1, email: c.email, step, consultaId: c.id }
 }
 
 // ── Handler principal ─────────────────────────────────────────────────────────
@@ -203,7 +235,11 @@ Deno.serve(async (req) => {
 
   if (body?.consultaId) {
     const step = Number(body.emailStep ?? 1)
-    const result = await enviarManual(String(body.consultaId), step)
+    const result = await enviarManual(
+      String(body.consultaId),
+      step,
+      typeof body.email === 'string' ? body.email : undefined
+    )
     return result.ok ? ok(result) : err(result.error ?? 'Error')
   }
 
