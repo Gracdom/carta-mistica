@@ -13,6 +13,7 @@
  *   RESEND_API_KEY, EMAIL_FROM, SITE_URL
  */
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { corsHeaders } from '../_shared/cors.ts'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -134,8 +135,17 @@ function email3Html(nombre: string) {
     </div>`)
 }
 
-const ok  = (body: object) => new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } })
-const err = (msg: string, status = 500) => new Response(JSON.stringify({ ok: false, error: msg }), { status, headers: { 'Content-Type': 'application/json' } })
+const ok = (body: object) =>
+  new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+
+const err = (msg: string, status = 500) =>
+  new Response(JSON.stringify({ ok: false, error: msg }), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
 
 // ── Envío manual de email de recuperación a una consulta específica ───────────
 async function enviarManual(consultaId: string, step: number) {
@@ -178,6 +188,13 @@ async function enviarManual(consultaId: string, step: number) {
 
 // ── Handler principal ─────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+  if (req.method !== 'POST') {
+    return new Response('Método no permitido', { status: 405, headers: corsHeaders })
+  }
+
   const now = new Date()
 
   // ── Modo manual: body con consultaId ──────────────────────────────────────
