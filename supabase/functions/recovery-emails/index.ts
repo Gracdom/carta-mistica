@@ -141,9 +141,9 @@ const ok = (body: object) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
 
-const err = (msg: string, status = 500) =>
+const err = (msg: string) =>
   new Response(JSON.stringify({ ok: false, error: msg }), {
-    status,
+    status: 200,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
 
@@ -204,7 +204,7 @@ Deno.serve(async (req) => {
   if (body?.consultaId) {
     const step = Number(body.emailStep ?? 1)
     const result = await enviarManual(String(body.consultaId), step)
-    return result.ok ? ok(result) : err(result.error ?? 'Error', 400)
+    return result.ok ? ok(result) : err(result.error ?? 'Error')
   }
 
   // ── Modo cron: procesar todos los pendientes ───────────────────────────────
