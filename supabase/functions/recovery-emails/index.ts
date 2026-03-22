@@ -180,7 +180,7 @@ async function enviarManual(consultaId: string, step: number, emailFallback?: st
     const { data } = await supabase
       .from('consultas_akasicas')
       .select('id, nombre, email, lectura_teaser, recovery_step')
-      .eq('email', emailFallback.trim().toLowerCase())
+      .ilike('email', emailFallback.trim())
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -255,7 +255,7 @@ Deno.serve(async (req) => {
       .eq('recovery_step', 0)
       .not('lectura_teaser', 'is', null)
       .not('email', 'is', null)
-      .lt('updated_at', new Date(now.getTime() - 60 * 60 * 1000).toISOString())
+      .lt('created_at', new Date(now.getTime() - 60 * 60 * 1000).toISOString())
 
     for (const c of pendientes1 ?? []) {
       const sent = await sendEmail(
