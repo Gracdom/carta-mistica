@@ -187,7 +187,7 @@ export default function RegistrosAkasicos() {
             <div className="inline-flex items-center gap-2.5 mb-7"
               style={{ background:'linear-gradient(135deg,rgba(109,40,217,.28),rgba(168,85,247,.15))', border:'1px solid rgba(167,139,250,.35)', borderRadius:'9999px', padding:'9px 20px' }}>
               <BookOpen size={13} className="text-purple-300" />
-              <span className="text-purple-200 text-xs font-semibold tracking-widest uppercase">Servicio Espiritual · IA Akáshica</span>
+              <span className="text-purple-200 text-xs font-semibold tracking-widest uppercase">Servicio Espiritual · Lectura personalizada</span>
             </div>
 
             <h1 className="font-playfair font-bold text-white leading-tight mb-5"
@@ -295,7 +295,7 @@ export default function RegistrosAkasicos() {
               {/* Info */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
-                  { icon:'🔮', titulo:'IA Akáshica', desc:'Canal de inteligencia espiritual entrenado en sabiduría akáshica' },
+                  { icon:'🔮', titulo:'Canal akáshico', desc:'Lectura espiritual enfocada en tu consulta y en tu proceso personal' },
                   { icon:'🌙', titulo:'Lectura personal', desc:'Cada registro es único, generado solo para vos en este momento' },
                   { icon:'✦',  titulo:'Privado y seguro', desc:'Tu información es confidencial y se usa solo para tu lectura' },
                 ].map((c, i) => (

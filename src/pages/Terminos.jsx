@@ -26,8 +26,8 @@ export default function Terminos() {
         ]} />
       </Seccion>
 
-      <Seccion titulo="4. Registro de Akáshico — Servicio de IA">
-        <P>El servicio "Registro Akáshico" es generado mediante inteligencia artificial y tiene carácter exclusivamente de <strong className="text-white">entretenimiento y reflexión personal</strong>. No representa canalizaciones, lecturas espiritistas ni comunicación con entidades de ningún tipo.</P>
+      <Seccion titulo="4. Registro Akáshico — Servicio espiritual">
+        <P>El servicio "Registro Akáshico" ofrece una lectura personalizada con carácter exclusivamente de <strong className="text-white">entretenimiento y reflexión personal</strong>. No representa canalizaciones, lecturas espiritistas ni comunicación con entidades de ningún tipo.</P>
         <P>El pago de 6 € por la lectura completa es un pago único, no reembolsable una vez entregado el contenido al email del usuario.</P>
       </Seccion>
 

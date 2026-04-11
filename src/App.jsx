@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import Home from './pages/Home'
 import Tarotistas from './pages/Tarotistas'
@@ -43,10 +43,60 @@ function ScrollToTop() {
 const subdomain = window.location.hostname.split('.')[0]
 const isDirectorioSubdomain = subdomain === 'directoriotarot'
 
+const DEV_ROUTES = [
+  { label: 'Inicio', path: '/' },
+  { label: 'Tarotistas', path: '/tarotistas' },
+  { label: 'Directorio Tarot', path: '/directoriotarot' },
+  { label: 'Registros Akasicos', path: '/registros-akasicos' },
+  { label: 'Blog', path: '/blog' },
+  { label: 'Soporte', path: '/soporte' },
+  { label: 'Terminos', path: '/terminos' },
+  { label: 'Privacidad', path: '/privacidad' },
+  { label: 'Cookies', path: '/cookies' },
+  { label: 'Aviso Legal', path: '/aviso-legal' },
+  { label: 'Login', path: '/login' },
+  { label: 'Registro', path: '/registro' },
+  { label: 'Admin Login', path: '/admin/login' },
+  { label: 'Admin Dashboard', path: '/admin' },
+  { label: 'Admin Tarotistas', path: '/admin/tarotistas' },
+  { label: 'Admin Consultas', path: '/admin/consultas' },
+  { label: 'Admin Leads', path: '/admin/leads' },
+  { label: 'Admin Solicitudes', path: '/admin/solicitudes' },
+  { label: 'Admin Resenas', path: '/admin/resenas' },
+]
+
 function AppGlobal() {
   const show         = useLeadModalShow()
   const { closeLeadModal } = useLeadModalActions()
   return <ModalLeadTarotista open={show} onClose={closeLeadModal} />
+}
+
+function DevRoutePicker() {
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+
+  if (!import.meta.env.DEV) return null
+
+  return (
+    <div
+      className="fixed left-4 bottom-4 z-[60] rounded-xl p-3 w-[270px]"
+      style={{ background: 'rgba(7,4,20,.92)', border: '1px solid rgba(139,92,246,.35)', backdropFilter: 'blur(8px)' }}
+    >
+      <p className="text-[10px] tracking-wide text-violet-300/80 uppercase mb-2">Navegacion rapida (dev)</p>
+      <select
+        value={DEV_ROUTES.some(r => r.path === pathname) ? pathname : ''}
+        onChange={(e) => e.target.value && navigate(e.target.value)}
+        className="w-full bg-white/5 text-white text-sm rounded-lg px-3 py-2 border border-white/15 focus:outline-none focus:border-violet-400/70"
+      >
+        <option value="" className="bg-[#110a2c]">Seleccionar pagina...</option>
+        {DEV_ROUTES.map(route => (
+          <option key={route.path} value={route.path} className="bg-[#110a2c]">
+            {route.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
 }
 
 export default function App() {
@@ -56,6 +106,7 @@ export default function App() {
         <LeadModalProvider>
           <BrowserRouter>
             <ScrollToTop />
+            <DevRoutePicker />
             <Routes>
               <Route path="*" element={<DirectorioTarot />} />
             </Routes>
@@ -70,6 +121,7 @@ export default function App() {
       <LeadModalProvider>
       <BrowserRouter>
         <ScrollToTop />
+        <DevRoutePicker />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/tarotistas" element={<Tarotistas />} />

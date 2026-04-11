@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import {
   Search, Trash2, Mail, Clock, CheckCircle, Eye, EyeOff,
-  Send, RefreshCw, X, ChevronLeft, ChevronRight,
+  Send, RefreshCw, X, ChevronLeft, ChevronRight, Download,
 } from 'lucide-react'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -20,6 +20,14 @@ const fmt = d => d
   : '—'
 
 const shortId = id => id ? id.slice(0, 8).toUpperCase() : '—'
+
+const csvEscape = (value) => {
+  if (value === null || value === undefined) return ''
+  const str = String(value).replace(/"/g, '""')
+  return `"${str}"`
+}
+
+const toCsvRow = (values) => values.map(csvEscape).join(',')
 
 // ── Badge ─────────────────────────────────────────────────────────────────────
 function Badge({ estado }) {
@@ -101,6 +109,28 @@ function Drawer({ consulta: c, onClose, onDelete, onRecovery, sendingRecovery })
             </Section>
           )}
 
+          {(c.tarotista_id || c.tarotista_nombre || c.pregunta_enviada) && (
+            <Section title="Tarotista y consulta">
+              {c.tarotista_id && <Field label="Tarotista (id)" value={c.tarotista_id} mono />}
+              {c.tarotista_nombre && <Field label="Tarotista" value={c.tarotista_nombre} />}
+              {c.tarotista_especialidad && <Field label="Especialidad" value={c.tarotista_especialidad} />}
+              {c.pregunta_enviada && (
+                <div className="pt-1">
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Prompt enviado a la IA</p>
+                  <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap break-words">{c.pregunta_enviada}</p>
+                </div>
+              )}
+              {c.snapshot_formulario && (
+                <details className="pt-2">
+                  <summary className="text-[11px] text-purple-400/80 cursor-pointer hover:text-purple-300">Snapshot del formulario (JSON)</summary>
+                  <pre className="mt-2 text-[10px] text-gray-500 overflow-x-auto p-2 rounded-lg bg-black/30 border border-white/5">
+                    {JSON.stringify(c.snapshot_formulario, null, 2)}
+                  </pre>
+                </details>
+              )}
+            </Section>
+          )}
+
           {/* Lectura teaser */}
           {c.lectura_teaser && (
             <Section title="Vista previa (teaser)">
@@ -120,7 +150,7 @@ function Drawer({ consulta: c, onClose, onDelete, onRecovery, sendingRecovery })
 
           {/* Lectura completa */}
           {c.lectura_completa && (
-            <Section title="Lectura completa (IA)">
+            <Section title="Lectura completa">
               <button onClick={() => setShowCompleta(v => !v)}
                 className="flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 transition-colors mb-2">
                 {showCompleta ? <EyeOff size={11} /> : <Eye size={11} />}
@@ -251,13 +281,71 @@ export default function AdminConsultas() {
       const q = buscar.toLowerCase()
       return (
         i.nombre?.toLowerCase().includes(q) ||
-        i.email?.toLowerCase().includes(q)  ||
-        i.id?.toLowerCase().includes(q)
+        i.email?.toLowerCase().includes(q) ||
+        i.id?.toLowerCase().includes(q) ||
+        i.tarotista_id?.toLowerCase().includes(q) ||
+        i.tarotista_nombre?.toLowerCase().includes(q)
       )
     })
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  const handleDownloadCsv = (sourceItems, scopeLabel) => {
+    if (!sourceItems.length) {
+      alert(`No hay consultas para exportar (${scopeLabel}).`)
+      return
+    }
+
+    const headers = [
+      'id',
+      'nombre',
+      'email',
+      'estado',
+      'fecha_nacimiento',
+      'lugar_nacimiento',
+      'intenciones',
+      'tarotista_id',
+      'tarotista_nombre',
+      'tarotista_especialidad',
+      'pregunta_enviada',
+      'snapshot_formulario',
+      'recovery_step',
+      'recovery_last_sent_at',
+      'created_at',
+      'stripe_session_id',
+    ]
+
+    const rows = sourceItems.map((c) => toCsvRow([
+      c.id,
+      c.nombre ?? '',
+      c.email ?? '',
+      c.estado ?? '',
+      c.fecha_nacimiento ?? '',
+      c.lugar_nacimiento ?? '',
+      Array.isArray(c.intenciones) ? c.intenciones.join(' | ') : '',
+      c.tarotista_id ?? '',
+      c.tarotista_nombre ?? '',
+      c.tarotista_especialidad ?? '',
+      c.pregunta_enviada ?? '',
+      c.snapshot_formulario != null ? JSON.stringify(c.snapshot_formulario) : '',
+      c.recovery_step ?? 0,
+      c.recovery_last_sent_at ?? '',
+      c.created_at ?? '',
+      c.stripe_session_id ?? c.checkout_session ?? '',
+    ]))
+
+    const csv = [toCsvRow(headers), ...rows].join('\n')
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `consultas-akasicas-${scopeLabel}-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
 
   const counts = {
     todos:      items.length,
@@ -327,6 +415,24 @@ export default function AdminConsultas() {
           ))}
           <button onClick={load} className="p-2 rounded-xl text-gray-500 hover:text-white border border-white/8 hover:border-white/20 transition-all">
             <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+          </button>
+          <button
+            onClick={() => handleDownloadCsv(filtered, 'filtradas')}
+            disabled={filtered.length === 0}
+            className="px-3 py-2 rounded-xl text-xs font-semibold text-gray-400 border border-white/8 hover:text-white hover:border-white/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+            title="Descargar consultas filtradas en CSV"
+          >
+            <Download size={12} />
+            Descargar filtradas
+          </button>
+          <button
+            onClick={() => handleDownloadCsv(items, 'todas')}
+            disabled={items.length === 0}
+            className="px-3 py-2 rounded-xl text-xs font-semibold text-gray-400 border border-white/8 hover:text-white hover:border-white/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+            title="Descargar todas las consultas en CSV"
+          >
+            <Download size={12} />
+            Descargar todas
           </button>
         </div>
       </div>

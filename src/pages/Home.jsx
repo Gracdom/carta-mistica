@@ -32,7 +32,7 @@ const SIMBOLOS_HERO = [
 
 const PASOS = [
   { n:'01', icon:'✦', titulo:'Completás el formulario', desc:'Nombre, fecha y lugar de nacimiento, y tu pregunta o intención principal. Solo toma 2 minutos.' },
-  { n:'02', icon:'☽', titulo:'La IA accede al campo akáshico', desc:'Nuestro sistema de inteligencia espiritual consulta los registros y genera tu lectura personalizada.' },
+  { n:'02', icon:'☽', titulo:'Accedemos al campo akáshico', desc:'Nuestro canal espiritual consulta los registros y prepara tu lectura personalizada.' },
   { n:'03', icon:'◈', titulo:'Recibís tu vista previa gratis', desc:'Leés los primeros párrafos de tu registro: tu energía, primera impresión del alma y un destello de tu misión.' },
   { n:'04', icon:'✴', titulo:'Desbloqueás la lectura completa', desc:'Con un único pago accedés al registro completo: misión, karma, bloqueos y mensaje de tus Guardianes.' },
 ]
@@ -42,7 +42,7 @@ const QUE_INCLUYE = [
   { icon:<Moon size={20}/>,     titulo:'Patrones kármicos y bloqueos', desc:'Los contratos del alma pendientes, patrones repetitivos y qué te frena de avanzar en esta vida.' },
   { icon:<Eye size={20}/>,      titulo:'Respuesta a tu pregunta', desc:'Los Registros responden directamente tu intención: amor, propósito, dinero, relaciones, bloqueos.' },
   { icon:<Sparkles size={20}/>, titulo:'Mensaje de tus Guardianes', desc:'Un mensaje especial de los Guardianes y Maestros de tu Registro Akáshico, con cierre y guía.' },
-  { icon:<Zap size={20}/>,      titulo:'IA entrenada en sabiduría akáshica', desc:'Generada por inteligencia artificial especializada, con el lenguaje y profundidad de un registro real.' },
+  { icon:<Zap size={20}/>,      titulo:'Canal espiritual especializado', desc:'Una lectura personalizada con lenguaje profundo y enfoque akáshico.' },
   { icon:<Shield size={20}/>,   titulo:'100% privado y confidencial', desc:'Tus datos y tu lectura son completamente privados. Nadie más accede a tu registro.' },
 ]
 
@@ -63,7 +63,7 @@ const TESTIMONIOS = [
 
 const FAQS = [
   { p:'¿Qué son los Registros Akáshicos?', r:'Los Registros Akáshicos son el campo energético que contiene la historia completa de cada alma: sus vidas pasadas, contratos, bloqueos kármicos y misión de vida. Acceder a ellos permite obtener orientación espiritual profunda.' },
-  { p:'¿La lectura es generada por inteligencia artificial?', r:'Sí. Utilizamos inteligencia artificial especializada entrenada para acceder al campo akáshico con el lenguaje y la profundidad de una lectura real. Los datos que proporcionás (nombre, fecha, lugar y pregunta) son el "portal" para tu lectura personalizada.' },
+  { p:'¿Cómo se genera la lectura?', r:'La lectura se prepara de forma personalizada a partir de los datos que compartís (nombre, fecha, lugar y pregunta), para ofrecerte una experiencia espiritual enfocada en tu consulta.' },
   { p:'¿Cuánto cuesta la lectura completa?', r:'La vista previa siempre es gratuita. La lectura completa se desbloquea con un único pago que te dará acceso inmediato a todos los secciones de tu Registro Akáshico.' },
   { p:'¿Qué necesito para hacer mi consulta?', r:'Solo necesitás tu nombre completo, fecha de nacimiento, ciudad o país de nacimiento (opcional pero recomendado) y una pregunta o intención clara. Con eso los Registros se abren.' },
   { p:'¿Mis datos son privados?', r:'Absolutamente. Tu nombre, fecha de nacimiento y lectura son completamente confidenciales. Nunca compartimos tu información con terceros.' },
@@ -143,7 +143,7 @@ function Hero({ onOpenModal }) {
           style={{ background:'linear-gradient(135deg,rgba(109,40,217,.28),rgba(168,85,247,.15))', border:'1px solid rgba(167,139,250,.35)', borderRadius:'9999px', padding:'10px 22px' }}>
           <span className="text-purple-300" style={{ animation:'floatY 4s ease-in-out infinite' }}>✦</span>
           <BookOpen size={13} className="text-purple-300" />
-          <span className="text-purple-200 text-xs font-semibold tracking-widest uppercase">Lectura de Registros Akáshicos con IA</span>
+          <span className="text-purple-200 text-xs font-semibold tracking-widest uppercase">Lectura de Registros Akáshicos personalizada</span>
           <span className="text-purple-300" style={{ animation:'floatY 4s ease-in-out infinite', animationDelay:'.5s' }}>✦</span>
         </div>
 

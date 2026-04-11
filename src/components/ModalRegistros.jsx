@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { X, Sparkles, ArrowRight, Check } from 'lucide-react'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { X, Sparkles, Send, Check } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 // ── Datos ─────────────────────────────────────────────────────────────────────
@@ -17,208 +17,317 @@ const INTENCIONES = [
 ]
 
 const PREGUNTAS = [
-  { key: 'nombre',          type: 'text',  pregunta: '¿Cuál es tu nombre?',                     placeholder: 'Escribe tu nombre completo…'          },
-  { key: 'email',           type: 'email', pregunta: 'Dejanos tu correo para recibir tu lectura', placeholder: 'tu@email.com'                         },
-  { key: 'fechaNacimiento', type: 'date',  pregunta: '¿Cuándo llegaste a este mundo?',           placeholder: ''                                     },
-  { key: 'lugar',           type: 'text',  pregunta: '¿Desde qué rincón del universo?',          placeholder: 'Ciudad o país donde naciste…'         },
+  { key: 'nombre',          type: 'text',  pregunta: '¿Cómo te llamas?',                                     placeholder: 'Tu nombre completo'                 },
+  { key: 'email',           type: 'email', pregunta: '¿Me compartes tu correo? Ahi te envio tu lectura.',   placeholder: 'tu@email.com'                       },
+  { key: 'fechaNacimiento', type: 'date',  pregunta: 'Perfecto. ¿Cual es tu fecha de nacimiento?',           placeholder: ''                                   },
+  { key: 'lugar',           type: 'text',  pregunta: '¿Y en que ciudad o pais naciste?',                     placeholder: 'Ej: Buenos Aires, Argentina'        },
+]
+
+const TAROTISTAS = [
+  {
+    id: 'luna',
+    nombre: 'Luna',
+    especialidad: 'Amor y relaciones',
+    icon: '♡',
+    color: 'rgba(236,72,153,.65)',
+    foto: '/tarotistas/luna.png',
+    experiencia: '8 años',
+    estilo: 'Empatica y directa',
+    descripcion: 'Te ayuda a entender vinculos, bloqueos afectivos y decisiones del corazon.',
+    tags: ['Amor', 'Relaciones', 'Reconciliacion'],
+  },
+  {
+    id: 'gale',
+    nombre: 'Gale',
+    especialidad: 'Trabajo y proposito',
+    icon: '✴',
+    color: 'rgba(16,185,129,.65)',
+    foto: '/tarotistas/gale.png',
+    experiencia: '11 años',
+    estilo: 'Practico y claro',
+    descripcion: 'Enfocado en decisiones laborales, cambios de rumbo y activacion de proposito.',
+    tags: ['Trabajo', 'Proposito', 'Carrera'],
+  },
+  {
+    id: 'aurora',
+    nombre: 'Aurora',
+    especialidad: 'Dinero y abundancia',
+    icon: '☽',
+    color: 'rgba(234,179,8,.65)',
+    foto: '/tarotistas/aurora.png',
+    experiencia: '7 años',
+    estilo: 'Motivadora y estrategica',
+    descripcion: 'Te guia para desbloquear creencias, ordenar energia y abrir caminos de prosperidad.',
+    tags: ['Dinero', 'Abundancia', 'Prosperidad'],
+  },
 ]
 
 const FRASES_LOADING = [
-  'Abriendo el campo akáshico…',
-  'Los Guardianes de los Registros te escuchan…',
-  'Accediendo a las memorias de tu alma…',
-  'Tejiendo los hilos de tu historia cósmica…',
-  'Canalizando el mensaje de tus Guardianes…',
+  'Estoy conectando con tus Registros...',
+  'Dame unos segundos, ya casi termino...',
+  'Organizando el mensaje para que sea claro para vos...',
+  'Ultimos detalles de tu lectura...',
 ]
 
-// Partículas estáticas
-const PARTICLES = Array.from({ length: 50 }, (_, i) => ({
-  id: i,
-  x: ((i * 137.5) % 100).toFixed(1),
-  y: ((i * 97.3) % 100).toFixed(1),
-  s: (((i * 7 + 3) % 12) / 10 + 0.4).toFixed(1),
-  d: (((i * 3 + 2) % 28) / 10 + 3).toFixed(1),
-  dl: (((i * 5) % 60) / 10).toFixed(1),
-}))
-
-// ── Hook: typewriter ─────────────────────────────────────────────────────────
-function useTypewriter(text, speed = 35) {
-  const [shown, setShown] = useState('')
-  const [done, setDone]   = useState(false)
-  useEffect(() => {
-    setShown('')
-    setDone(false)
-    let i = 0
-    const t = setInterval(() => {
-      i++
-      setShown(text.slice(0, i))
-      if (i >= text.length) { clearInterval(t); setDone(true) }
-    }, speed)
-    return () => clearInterval(t)
-  }, [text, speed])
-  return { shown, done }
+function horaCorta(date = new Date()) {
+  return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
 }
 
-// ── Pantalla de carga ─────────────────────────────────────────────────────────
-function Analizando() {
-  const [frase, setFrase] = useState(0)
-  const [prog, setProg]   = useState(0)
-  useEffect(() => {
-    const t1 = setInterval(() => setFrase(f => (f + 1) % FRASES_LOADING.length), 2400)
-    const t2 = setInterval(() => setProg(p => Math.min(p + 1, 95)), 160)
-    return () => { clearInterval(t1); clearInterval(t2) }
-  }, [])
+/** Fondo en capas: base casi nocturna + bruma al color del tarotista + profundidad mística. */
+function tarotistaCardBackground(accentRgba) {
+  const halo = accentRgba.replace('.65)', '.16)')
+  const niebla = accentRgba.replace('.65)', '.09)')
+  const borde = accentRgba.replace('.65)', '.11)')
+  return `
+    radial-gradient(ellipse 125% 95% at 50% -8%, ${halo}, transparent 50%),
+    radial-gradient(ellipse 95% 75% at 94% 90%, ${niebla}, transparent 58%),
+    radial-gradient(ellipse 85% 65% at 6% 88%, ${borde}, transparent 56%),
+    radial-gradient(circle at 45% 35%, rgba(88,28,135,.12), transparent 64%),
+    radial-gradient(ellipse 110% 85% at 50% 115%, rgba(0,0,0,.55), transparent 55%),
+    linear-gradient(168deg, rgba(3,1,9,.995) 0%, rgba(12,6,34,.98) 44%, rgba(2,1,8,1) 100%)
+  `
+}
+
+function buildPreguntaEnvio(formActual) {
+  return `Tarotista elegida: ${formActual.tarotista?.nombre ?? 'Sin definir'} (${formActual.tarotista?.especialidad ?? 'General'}). Intenciones: ${(formActual.intenciones ?? []).join(', ')}`
+}
+
+function snapshotFormulario(formActual) {
+  return {
+    nombre: formActual.nombre ?? '',
+    email: formActual.email ?? '',
+    fechaNacimiento: formActual.fechaNacimiento ?? '',
+    lugar: formActual.lugar ?? '',
+    intenciones: formActual.intenciones ?? [],
+    tarotista: formActual.tarotista
+      ? {
+          id: formActual.tarotista.id,
+          nombre: formActual.tarotista.nombre,
+          especialidad: formActual.tarotista.especialidad,
+        }
+      : null,
+  }
+}
+
+/** Fila alineada con la tabla consultas_akasicas (guardado parcial y final). */
+function filaConsultaDb(formActual) {
+  const t = formActual.tarotista
+  return {
+    nombre: formActual.nombre,
+    fecha_nacimiento: formActual.fechaNacimiento || null,
+    lugar_nacimiento: formActual.lugar || null,
+    email: formActual.email || null,
+    intenciones: formActual.intenciones ?? [],
+    tarotista_id: t?.id ?? null,
+    tarotista_nombre: t?.nombre ?? null,
+    tarotista_especialidad: t?.especialidad ?? null,
+    snapshot_formulario: snapshotFormulario(formActual),
+  }
+}
+
+function TarotistaCardsGrid({ selectedId, onSelect }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-8 text-center">
-      <style>{`
-        @keyframes orb { to{transform:rotate(360deg)} }
-        @keyframes orbR{ to{transform:rotate(-360deg)} }
-        @keyframes puls{ 0%,100%{opacity:.15;transform:scale(.9)} 50%{opacity:.6;transform:scale(1.1)} }
-        @keyframes fmsg{ 0%{opacity:0;transform:translateY(8px)} 15%,80%{opacity:1;transform:translateY(0)} 100%{opacity:0} }
-        .ra{animation:orb  4s linear infinite}
-        .rb{animation:orbR 2.8s linear infinite}
-        .rc{animation:orb  7s linear infinite}
-        .pc{animation:puls 2.5s ease-in-out infinite}
-        .fm{animation:fmsg 2.4s ease forwards}
-      `}</style>
-      <div className="relative w-32 h-32 mb-10">
-        <div className="absolute inset-0 rounded-full" style={{background:'radial-gradient(circle,rgba(139,92,246,.14),transparent 70%)'}}/>
-        <div className="ra absolute inset-0 rounded-full" style={{border:'1px solid rgba(139,92,246,.14)'}}/>
-        <div className="rb absolute inset-3 rounded-full" style={{border:'1px dashed rgba(167,139,250,.18)'}}/>
-        <div className="rc absolute inset-6 rounded-full" style={{border:'1px dotted rgba(139,92,246,.1)'}}/>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="pc text-5xl select-none" style={{color:'rgba(196,181,253,.45)'}}>✦</span>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:px-1">
+      {TAROTISTAS.map(t => {
+        const selected = selectedId === t.id
+        return (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => onSelect(t)}
+            className="relative overflow-hidden rounded-[18px] px-2.5 py-2.5 sm:px-3 sm:py-3 text-left text-xs transition-all min-h-[300px] flex flex-col"
+            style={{
+              background: tarotistaCardBackground(t.color),
+              border: `1px solid ${selected ? t.color.replace('.65', '.5') : 'rgba(255,255,255,.07)'}`,
+              boxShadow: selected
+                ? `0 0 0 1px ${t.color.replace('.65', '.22')}, 0 18px 48px rgba(0,0,0,.5), 0 0 52px ${t.color.replace('.65', '.15')}, inset 0 1px 0 rgba(255,255,255,.06)`
+                : '0 12px 32px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.04)',
+              color: selected ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.72)',
+            }}
+          >
+            <div
+              className="pointer-events-none absolute inset-0 opacity-40 mix-blend-soft-light"
+              style={{
+                background: `
+                  repeating-linear-gradient(38deg, rgba(255,255,255,.025) 0 1px, transparent 1px 10px),
+                  repeating-linear-gradient(128deg, rgba(139,92,246,.035) 0 1px, transparent 1px 12px)
+                `,
+              }}
+            />
+            <div
+              className="pointer-events-none absolute inset-0 z-[1] rounded-[18px]"
+              style={{
+                background: 'radial-gradient(ellipse 85% 78% at 50% 42%, transparent 22%, rgba(0,0,0,.58) 100%)',
+              }}
+            />
+            <div
+              className="pointer-events-none absolute inset-0 z-[1] opacity-[0.4]"
+              style={{
+                backgroundImage: `
+                  radial-gradient(circle at 18% 22%, rgba(255,255,255,.35) 0, transparent 2px),
+                  radial-gradient(circle at 82% 16%, rgba(255,255,255,.25) 0, transparent 2px),
+                  radial-gradient(circle at 74% 76%, rgba(255,255,255,.3) 0, transparent 2px),
+                  radial-gradient(circle at 26% 80%, rgba(255,255,255,.22) 0, transparent 2px),
+                  radial-gradient(circle at 50% 10%, rgba(255,255,255,.2) 0, transparent 1.5px)
+                `,
+              }}
+            />
+
+            <div className="relative z-10 flex items-center gap-1.5 mb-2 text-white/85">
+              <div className="h-px flex-1 bg-white/45" />
+              <span className="text-[10px] tracking-[.2em]">◇◇◇</span>
+              <div className="h-px flex-1 bg-white/45" />
+            </div>
+
+            {selected && (
+              <div
+                className="absolute top-2 right-2 z-20 w-6 h-6 rounded-full flex items-center justify-center"
+                style={{ background: t.color.replace('.65', '.45'), border: `1px solid ${t.color.replace('.65', '.85')}` }}
+              >
+                <Check size={12} className="text-white" />
+              </div>
+            )}
+
+            <div className="relative z-10 flex items-center justify-center">
+              <img
+                src={t.foto}
+                alt={t.nombre}
+                className="w-[72px] h-[72px] rounded-full object-cover"
+                style={{
+                  border: `2px solid ${selected ? t.color.replace('.65', '.8') : 'rgba(255,255,255,.25)'}`,
+                  boxShadow: selected ? `0 0 30px ${t.color.replace('.65', '.35')}` : '0 8px 20px rgba(0,0,0,.35)',
+                }}
+              />
+            </div>
+
+            <div className="relative z-10 text-center mt-2">
+              <p className="font-playfair text-[28px] leading-none text-white mb-1 tracking-wide">{t.nombre}</p>
+              <p className="text-[10px] text-white/95 leading-relaxed px-0.5 line-clamp-3">{t.descripcion}</p>
+              <p className="text-[9px] text-white/92 leading-relaxed mt-1">Especialista en {t.especialidad.toLowerCase()}.</p>
+              <p className="text-[10px] text-white font-semibold mt-1">{t.experiencia}</p>
+              <p className="text-[9px] text-white/80 mt-0.5">{t.estilo}</p>
+            </div>
+
+            <div className="relative z-10 mt-auto pt-2">
+              <div className="flex items-center justify-center gap-1 mb-2 flex-wrap">
+                {(t.tags || []).map(tag => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[9px] font-medium"
+                    style={{
+                      border: '1px solid rgba(255,255,255,.72)',
+                      color: 'rgba(255,255,255,.96)',
+                      background: 'rgba(255,255,255,.03)',
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2 text-white/85">
+                <div className="h-px flex-1 bg-white/45" />
+                <span className="text-[10px] tracking-[.2em]">◇◇◇</span>
+                <div className="h-px flex-1 bg-white/45" />
+              </div>
+            </div>
+
+            <div
+              className="pointer-events-none absolute inset-0 rounded-[22px]"
+              style={{ boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.08)' }}
+            />
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function BubbleBot({ children, className = '', time = horaCorta(), showAvatar = true }) {
+  return (
+    <div className={`flex items-end gap-2 max-w-[92%] ${className}`}>
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0 transition-opacity ${showAvatar ? 'opacity-100' : 'opacity-0'}`}
+        style={{ background: 'rgba(109,40,217,.35)', border: '1px solid rgba(167,139,250,.4)' }}>
+        ✦
+      </div>
+      <div className="rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed text-white/90"
+        style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.08)' }}>
+        {children}
+        <div className="text-[10px] text-white/40 mt-2">{time}</div>
+      </div>
+    </div>
+  )
+}
+
+function BubbleUser({ children, time = horaCorta() }) {
+  return (
+    <div className="max-w-[88%] ml-auto rounded-2xl rounded-tr-sm px-4 py-3 text-sm leading-relaxed text-white">
+      <div style={{ background: 'linear-gradient(135deg,rgba(109,40,217,.9),rgba(139,92,246,.78))', border: '1px solid rgba(167,139,250,.45)' }}
+        className="rounded-2xl rounded-tr-sm px-4 py-3">
+        {children}
+        <div className="text-[10px] text-white/65 mt-2 flex items-center justify-end gap-1">
+          <span>{time}</span>
+          <Check size={10} />
         </div>
-        {[0,1,2,3].map(i => (
-          <div key={i} className="ra absolute inset-0" style={{animationDelay:`${i*.75}s`}}>
-            <div className="absolute w-1 h-1 rounded-full" style={{top:0,left:'50%',transform:'translateX(-50%)',background:'rgba(167,139,250,.5)'}}/>
-          </div>
+      </div>
+    </div>
+  )
+}
+
+function TypingBubble({ time }) {
+  return (
+    <BubbleBot time={time}>
+      <div className="flex items-center gap-1.5 py-1">
+        {[0, 1, 2].map(i => (
+          <span
+            key={i}
+            className="w-1.5 h-1.5 rounded-full bg-violet-200/75 animate-bounce"
+            style={{ animationDelay: `${i * 0.15}s` }}
+          />
         ))}
       </div>
-      <p className="font-playfair text-white/70 text-xl font-semibold mb-3 tracking-wide">Consultando los Registros</p>
-      <p key={frase} className="fm text-violet-300/40 text-sm mb-10 h-5">{FRASES_LOADING[frase]}</p>
-      <div className="w-64">
-        <div className="h-px rounded-full overflow-hidden" style={{background:'rgba(255,255,255,.05)'}}>
-          <div className="h-full transition-all duration-200" style={{width:`${prog}%`,background:'linear-gradient(90deg,rgba(109,40,217,.5),rgba(167,139,250,.7))'}}/>
-        </div>
-        <p className="text-white/12 text-xs mt-2 text-right">{prog}%</p>
-      </div>
-    </div>
+    </BubbleBot>
   )
 }
 
-// ── Un campo tipo ritual ─────────────────────────────────────────────────────
-function CampoRitual({ preguntaKey, tipo, preguntaTexto, placeholder, valor, onChange, onEnter, autoFocus }) {
-  const { shown } = useTypewriter(preguntaTexto, 38)
-  const [focused, setFocused] = useState(false)
-  const inputRef = useRef(null)
+function formatValue(paso, form) {
+  if (paso === 0) return form.nombre || '—'
+  if (paso === 1) return form.email || '—'
+  if (paso === 2) {
+    if (!form.fechaNacimiento) return '—'
+    try {
+      return new Date(`${form.fechaNacimiento}T00:00:00`).toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+      })
+    } catch {
+      return form.fechaNacimiento
+    }
+  }
+  if (paso === 3) return form.lugar || 'No indicado'
+  return form.intenciones.join(', ')
+}
 
+function AnalizandoChat() {
+  const [idx, setIdx] = useState(0)
   useEffect(() => {
-    if (autoFocus) setTimeout(() => inputRef.current?.focus(), 400)
-  }, [autoFocus, preguntaKey])
-
+    const t = setInterval(() => setIdx(i => (i + 1) % FRASES_LOADING.length), 1700)
+    return () => clearInterval(t)
+  }, [])
   return (
-    <div className="flex flex-col items-center text-center px-6 py-8">
-      {/* Pregunta con typewriter */}
-      <p className="font-playfair text-white/80 text-xl font-semibold leading-snug tracking-wide">
-        {shown}
-        <span className="inline-block w-0.5 h-5 bg-violet-400/60 ml-1 align-middle animate-pulse" />
-      </p>
-
-      {/* Input sublínea */}
-      <div className="relative w-full max-w-xs mt-8">
-        {/* Glow de foco */}
-        <div className="absolute -inset-4 rounded-full pointer-events-none transition-all duration-700"
-          style={{background: focused ? 'radial-gradient(ellipse 80% 60% at 50% 100%,rgba(109,40,217,.12),transparent)' : 'transparent'}}/>
-
-        <input
-          ref={inputRef}
-          type={tipo}
-          value={valor}
-          onChange={e => onChange(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          onKeyDown={e => e.key === 'Enter' && onEnter()}
-          placeholder={placeholder}
-          className="w-full bg-transparent border-0 border-b text-center text-white text-lg placeholder-white/15 outline-none pb-3 transition-all duration-300 [color-scheme:dark]"
-          style={{
-            borderBottomColor: focused ? 'rgba(139,92,246,.6)' : 'rgba(255,255,255,.1)',
-            boxShadow: focused ? '0 1px 0 rgba(139,92,246,.3)' : 'none',
-            caretColor: 'rgba(139,92,246,.8)',
-          }}
-        />
-
-        {/* Indicador de foco animado */}
-        <div className="absolute bottom-0 left-1/2 h-px transition-all duration-500 rounded-full"
-          style={{
-            background: 'rgba(139,92,246,.6)',
-            width: focused ? '100%' : '0%',
-            transform: 'translateX(-50%)',
-          }}/>
+    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <BubbleBot>
+        Estoy consultando tus Registros. Esto puede tomar unos segundos...
+      </BubbleBot>
+      <BubbleBot className="animate-pulse text-violet-200/85">
+        {FRASES_LOADING[idx]}
+      </BubbleBot>
+      <div className="flex items-center gap-1.5 pl-2">
+        {[0, 1, 2].map(i => (
+          <span key={i} className="w-1.5 h-1.5 rounded-full bg-violet-300/55 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+        ))}
       </div>
-
-      {tipo !== 'date' && (
-        <p className="text-white/15 text-xs mt-5">Presioná Enter para continuar</p>
-      )}
-    </div>
-  )
-}
-
-// ── Grid de intenciones ──────────────────────────────────────────────────────
-function GridIntenciones({ valor, onChange }) {
-  const { shown } = useTypewriter('¿Qué desea revelar tu alma?', 40)
-  return (
-    <div className="flex flex-col items-center px-4 py-4">
-      <p className="font-playfair text-white/80 text-lg font-semibold mb-1 text-center tracking-wide">
-        {shown}
-        <span className="inline-block w-0.5 h-5 bg-violet-400/60 ml-1 align-middle animate-pulse" />
-      </p>
-      <p className="text-white/20 text-xs mb-3 text-center">Elegí todo lo que resuene en este momento</p>
-
-      <div className="grid grid-cols-2 gap-2 w-full">
-        {INTENCIONES.map(({ label, icon, color }) => {
-          const sel = valor.includes(label)
-          return (
-            <button
-              key={label}
-              type="button"
-              onClick={() => onChange(sel ? valor.filter(v => v !== label) : [...valor, label])}
-              className="group relative flex items-center gap-2 px-3 py-2.5 rounded-xl text-left transition-all duration-300 overflow-hidden"
-              style={{
-                background: sel ? `linear-gradient(135deg,${color.replace('.6','.15')},rgba(0,0,0,0))` : 'rgba(255,255,255,.025)',
-                border: `1px solid ${sel ? color.replace('.6','.35') : 'rgba(255,255,255,.06)'}`,
-                boxShadow: sel ? `0 0 16px ${color.replace('.6','.12')}` : 'none',
-              }}
-            >
-              {/* Glow de fondo al seleccionar */}
-              {sel && (
-                <div className="absolute inset-0 pointer-events-none"
-                  style={{background:`radial-gradient(circle at 20% 50%,${color.replace('.6','.08')},transparent 60%)`}}/>
-              )}
-              <span className="text-lg sm:text-xl leading-none relative z-10 transition-all duration-300"
-                style={{opacity: sel ? 1 : 0.2, textShadow: sel ? `0 0 12px ${color}` : 'none'}}>
-                {icon}
-              </span>
-              <span className="text-xs leading-snug relative z-10 transition-colors duration-200"
-                style={{color: sel ? 'rgba(255,255,255,.8)' : 'rgba(255,255,255,.3)'}}>
-                {label}
-              </span>
-              {sel && (
-                <div className="ml-auto relative z-10 w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{background: color.replace('.6','.3'), border:`1px solid ${color.replace('.6','.5')}`}}>
-                  <Check size={9} className="text-white"/>
-                </div>
-              )}
-            </button>
-          )
-        })}
-      </div>
-
-      {valor.length > 0 && (
-        <p className="text-violet-400/40 text-xs text-center mt-3">
-          {valor.length} {valor.length === 1 ? 'intención elegida' : 'intenciones elegidas'}
-        </p>
-      )}
     </div>
   )
 }
@@ -227,13 +336,15 @@ function GridIntenciones({ valor, onChange }) {
 export default function ModalRegistros({ onClose }) {
   const [estado, setEstado]         = useState('form')
   const [paso, setPaso]             = useState(0)       // 0-3 = 4 preguntas, 4 = intenciones
-  const [animDir, setAnimDir]       = useState(1)
-  const [animKey, setAnimKey]       = useState(0)
-  const [form, setForm]             = useState({ nombre:'', fechaNacimiento:'', lugar:'', intenciones:[], email:'' })
+  const [form, setForm]             = useState({ nombre:'', fechaNacimiento:'', lugar:'', intenciones:[], email:'', tarotista: null })
+  const [tarotistaConfirmada, setTarotistaConfirmada] = useState(false)
   const [teaser, setTeaser]         = useState('')
   const [consultaId, setConsultaId] = useState(null)
   const [loadingPago, setLoadingPago] = useState(false)
   const [error, setError]           = useState('')
+  const [botEscribiendo, setBotEscribiendo] = useState(true)
+  const bodyRef = useRef(null)
+  const startedAt = useMemo(() => horaCorta(), [])
 
   useEffect(() => {
     const fn = e => e.key === 'Escape' && onClose()
@@ -244,8 +355,6 @@ export default function ModalRegistros({ onClose }) {
   const set = (k, v) => setForm(f => ({...f, [k]: v}))
 
   const irA = (n) => {
-    setAnimDir(n > paso ? 1 : -1)
-    setAnimKey(k => k + 1)
     setPaso(n)
     setError('')
   }
@@ -253,11 +362,12 @@ export default function ModalRegistros({ onClose }) {
   const TOTAL_PASOS = 5  // 4 inputs + 1 intenciones
 
   const validar = () => {
-    if (paso === 0 && !form.nombre.trim())        { setError('Escribe tu nombre para continuar.'); return false }
-    if (paso === 1 && !form.email.trim())         { setError('Ingresá tu email para continuar.'); return false }
-    if (paso === 1 && !/\S+@\S+\.\S+/.test(form.email)) { setError('El email no es válido.'); return false }
-    if (paso === 2 && !form.fechaNacimiento)      { setError('Ingresá tu fecha de nacimiento.'); return false }
-    if (paso === 4 && form.intenciones.length===0){ setError('Elegí al menos una intención.'); return false }
+    if (!tarotistaConfirmada || !form.tarotista) { setError('Elegi primero con que tarotista queres hablar.'); return false }
+    if (paso === 0 && !form.nombre.trim())        { setError('Necesito tu nombre para seguir 🙂'); return false }
+    if (paso === 1 && !form.email.trim())         { setError('Dejame tu correo para enviarte la lectura completa.'); return false }
+    if (paso === 1 && !/\S+@\S+\.\S+/.test(form.email)) { setError('Ese correo parece tener un error. ¿Lo revisamos?'); return false }
+    if (paso === 2 && !form.fechaNacimiento)      { setError('Contame tu fecha de nacimiento para continuar.'); return false }
+    if (paso === 4 && form.intenciones.length===0){ setError('Elegi al menos un tema para enfocar tu lectura.'); return false }
     return true
   }
 
@@ -265,33 +375,22 @@ export default function ModalRegistros({ onClose }) {
   const guardarParcial = async (formActual, idActual) => {
     try {
       if (!idActual) {
-        // Primera vez: INSERT con los datos mínimos (nombre ya validado)
         const { data, error: dbErr } = await supabase
           .from('consultas_akasicas')
           .insert({
-            nombre:           formActual.nombre,
-            fecha_nacimiento: formActual.fechaNacimiento || null,
-            lugar_nacimiento: formActual.lugar || null,
-            email:            formActual.email || null,
-            intenciones:      formActual.intenciones,
-            estado:           'incompleto',
+            ...filaConsultaDb(formActual),
+            estado: 'incompleto',
           })
           .select('id').single()
         if (dbErr) { console.error('DB insert:', dbErr); return null }
         return data?.id ?? null
-      } else {
-        // Siguientes pasos: UPDATE
-        await supabase
-          .from('consultas_akasicas')
-          .update({
-            fecha_nacimiento: formActual.fechaNacimiento || null,
-            lugar_nacimiento: formActual.lugar || null,
-            email:            formActual.email || null,
-            intenciones:      formActual.intenciones,
-          })
-          .eq('id', idActual)
-        return idActual
       }
+      const { error: dbErr } = await supabase
+        .from('consultas_akasicas')
+        .update(filaConsultaDb(formActual))
+        .eq('id', idActual)
+      if (dbErr) console.error('DB update:', dbErr)
+      return idActual
     } catch (e) {
       console.error('guardarParcial error:', e)
       return idActual
@@ -312,11 +411,16 @@ export default function ModalRegistros({ onClose }) {
     setEstado('analyzing')
     setError('')
     const id = idParam || consultaId
+    const pregunta = buildPreguntaEnvio(form)
     try {
       if (id) {
         await supabase
           .from('consultas_akasicas')
-          .update({ intenciones: form.intenciones, estado: 'pendiente' })
+          .update({
+            ...filaConsultaDb(form),
+            pregunta_enviada: pregunta,
+            estado: 'pendiente',
+          })
           .eq('id', id)
       }
 
@@ -325,7 +429,7 @@ export default function ModalRegistros({ onClose }) {
           nombre:          form.nombre,
           fechaNacimiento: form.fechaNacimiento,
           lugar:           form.lugar,
-          pregunta:        form.intenciones.join(', '),
+          pregunta,
         },
       })
 
@@ -337,7 +441,13 @@ export default function ModalRegistros({ onClose }) {
 
       if (id) {
         await supabase.from('consultas_akasicas')
-          .update({ lectura_teaser: data.teaser, lectura_completa: data.completa, estado: 'preview' })
+          .update({
+            lectura_teaser: data.teaser,
+            lectura_completa: data.completa,
+            estado: 'preview',
+            ...filaConsultaDb(form),
+            pregunta_enviada: pregunta,
+          })
           .eq('id', id)
       }
       if (id) setConsultaId(id)
@@ -345,11 +455,28 @@ export default function ModalRegistros({ onClose }) {
       setEstado('preview')
     } catch (e) {
       console.error('[ModalRegistros] handleSubmit error:', e)
-      setError(e.message || 'Los Registros no pudieron abrirse. Intentá de nuevo.')
+      setError(e.message || 'No pude abrir los Registros esta vez. Probemos de nuevo en un momento.')
       setEstado('form')
       setPaso(4) // volver al paso de intenciones, no al inicio
     }
   }
+
+  useEffect(() => {
+    if (!bodyRef.current) return
+    bodyRef.current.scrollTop = bodyRef.current.scrollHeight
+  }, [paso, form, error, estado, teaser])
+
+  useEffect(() => {
+    if (estado !== 'form') return
+    setBotEscribiendo(true)
+    const t = setTimeout(() => setBotEscribiendo(false), 520)
+    return () => clearTimeout(t)
+  }, [paso, estado, tarotistaConfirmada])
+
+  const currentQuestion = paso < 4 ? PREGUNTAS[paso] : null
+  const pasosCompletados = useMemo(() => Array.from({ length: paso }, (_, i) => i), [paso])
+
+  const enviarRespuestaActual = () => siguiente()
 
   const handlePagar = async () => {
     setLoadingPago(true)
@@ -371,242 +498,267 @@ export default function ModalRegistros({ onClose }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{background:'rgba(2,1,14,.92)', backdropFilter:'blur(20px)'}}
+      style={{ background: 'rgba(2,1,14,.92)', backdropFilter: 'blur(20px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <style>{`
-        @keyframes tw  { 0%,100%{opacity:.08} 50%{opacity:.35} }
-        @keyframes sIn { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
-        @keyframes sInL{ from{opacity:0;transform:translateX(-40px)} to{opacity:1;transform:translateX(0)} }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-        .s-r{ animation: sIn  .4s cubic-bezier(.25,.46,.45,.94) forwards }
-        .s-l{ animation: sInL .4s cubic-bezier(.25,.46,.45,.94) forwards }
-        .fu { animation: fadeUp .5s ease forwards }
-        @keyframes floatSymbol { 0%,100%{transform:translateY(0) rotate(0deg);opacity:.08} 50%{transform:translateY(-12px) rotate(8deg);opacity:.18} }
-        @keyframes lockPulse { 0%,100%{box-shadow:0 0 0px rgba(109,40,217,0)} 50%{box-shadow:0 0 40px rgba(109,40,217,.25)} }
-        @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-        @keyframes btnPulse { 0%,100%{box-shadow:0 0 20px rgba(109,40,217,.3),0 0 0px rgba(139,92,246,0)} 50%{box-shadow:0 0 50px rgba(109,40,217,.5),0 0 80px rgba(139,92,246,.15)} }
-        @keyframes scanline { 0%{transform:translateY(-100%)} 100%{transform:translateY(400%)} }
-        @keyframes revealGlow { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
-        .btn-pulse { animation: btnPulse 2.5s ease-in-out infinite }
-        .lock-pulse { animation: lockPulse 3s ease-in-out infinite }
-        .reveal-glow { animation: revealGlow .6s ease forwards }
-        .modal-scroll::-webkit-scrollbar { display: none }
-        .modal-scroll { -ms-overflow-style: none; scrollbar-width: none }
+        .chat-scroll::-webkit-scrollbar { width: 0 }
+        .chat-scroll { -ms-overflow-style: none; scrollbar-width: none }
+        @keyframes msgIn {
+          from { opacity: 0; transform: translateY(8px) scale(.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .msg-in { animation: msgIn .28s ease both; }
       `}</style>
 
+      {estado === 'form' && !tarotistaConfirmada ? (
+        <div
+          className="relative w-full max-w-[min(100%,72rem)] flex flex-col rounded-2xl overflow-hidden"
+          style={{
+            background: '#05030f',
+            boxShadow: '0 0 80px rgba(109,40,217,.2), 0 0 0 1px rgba(139,92,246,.1)',
+            maxHeight: 'min(90svh, 90vh)',
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#090517]">
+            <p className="text-white text-sm font-semibold">Elegí tu tarotista</p>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-white/35 hover:text-white/75 hover:bg-white/5 transition-all"
+            >
+              <X size={14} />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto chat-scroll px-4 py-5 space-y-4 min-h-0">
+            <p className="text-white/90 text-sm text-center leading-relaxed px-1">
+              Antes de empezar, ¿con cual tarotista queres hablar?
+            </p>
+            <TarotistaCardsGrid
+              selectedId={form.tarotista?.id}
+              onSelect={t => { set('tarotista', t); setError('') }}
+            />
+            {form.tarotista && (
+              <div className="pt-1">
+                <BubbleUser>
+                  Quiero hablar con {form.tarotista.nombre} ({form.tarotista.especialidad})
+                </BubbleUser>
+              </div>
+            )}
+            {error && (
+              <div
+                className="max-w-[90%] rounded-xl px-3 py-2 text-xs text-red-200"
+                style={{ background: 'rgba(220,38,38,.15)', border: '1px solid rgba(220,38,38,.35)' }}
+              >
+                {error}
+              </div>
+            )}
+          </div>
+          <div className="border-t border-white/10 p-3 bg-[#090517] shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                if (!form.tarotista) {
+                  setError('Elegi una tarotista para empezar el chat.')
+                  return
+                }
+                setTarotistaConfirmada(true)
+                setPaso(0)
+              }}
+              className="w-full h-11 px-5 rounded-xl text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all"
+              style={{ background: 'linear-gradient(135deg,rgba(109,40,217,.9),rgba(139,92,246,.8))', color: 'white' }}
+            >
+              Continuar con {form.tarotista?.nombre ?? 'tu tarotista'}
+            </button>
+          </div>
+        </div>
+      ) : (
       <div
-        className="relative w-full max-w-lg flex flex-col rounded-2xl overflow-hidden"
+        className="relative w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden"
         style={{
-          background:'#05030f',
-          boxShadow:'0 0 80px rgba(109,40,217,.2), 0 0 0 1px rgba(139,92,246,.1)',
+          background: '#05030f',
+          boxShadow: '0 0 80px rgba(109,40,217,.2), 0 0 0 1px rgba(139,92,246,.1)',
           maxHeight: 'min(90svh, 90vh)',
         }}
       >
-        {/* ── Partículas de fondo ── */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none rounded-2xl">
-          {PARTICLES.map(p => (
-            <div key={p.id} className="absolute rounded-full bg-white"
-              style={{left:`${p.x}%`,top:`${p.y}%`,width:`${p.s}px`,height:`${p.s}px`,animation:`tw ${p.d}s ${p.dl}s ease-in-out infinite`}}/>
-          ))}
-          {['✦','☽','◈','✧','⟡','∞'].map((s,i) => (
-            <span key={i} className="absolute text-white/10 text-2xl select-none pointer-events-none font-light"
-              style={{
-                left:`${[8,85,15,78,45,92][i]}%`,
-                top:`${[15,20,60,55,80,75][i]}%`,
-                animation:`floatSymbol ${6+i*1.5}s ${i*.8}s ease-in-out infinite`,
-              }}>
-              {s}
-            </span>
-          ))}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#090517]">
+          <div className="min-w-0 flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
+              style={{ background: 'rgba(109,40,217,.35)', border: '1px solid rgba(167,139,250,.4)' }}>
+              ✦
+            </div>
+            <div>
+              <p className="text-white text-sm font-semibold truncate">Consulta de Registros Akashicos</p>
+              <p className="text-violet-300/65 text-xs">En linea</p>
+            </div>
+          </div>
+          <button onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white/35 hover:text-white/75 hover:bg-white/5 transition-all">
+            <X size={14} />
+          </button>
         </div>
 
-        {/* Glow top */}
-        <div className="absolute top-0 inset-x-0 h-32 pointer-events-none"
-          style={{background:'radial-gradient(ellipse 80% 100% at 50% -5%,rgba(109,40,217,.1),transparent 70%)'}}/>
-        <div className="absolute top-0 inset-x-16 h-px pointer-events-none"
-          style={{background:'linear-gradient(90deg,transparent,rgba(139,92,246,.25),transparent)'}}/>
-
-        {/* Cerrar */}
-        <button onClick={onClose}
-          className="absolute top-3 right-3 z-20 w-8 h-8 rounded-full flex items-center justify-center text-white/20 hover:text-white/50 hover:bg-white/5 transition-all">
-          <X size={14}/>
-        </button>
-
-        {/* ── FORM ── */}
         {estado === 'form' && (
           <>
-            {/* Barra de progreso — fija arriba */}
-            <div className="relative z-10 px-6 pt-5 pb-3 flex-shrink-0">
-              <p className="text-center text-white/10 text-xs tracking-[.8em] mb-3 select-none">✦ ◈ ☽</p>
-              <div className="flex items-center justify-center gap-1.5">
-                {Array.from({length: TOTAL_PASOS}).map((_, i) => (
-                  <div key={i} className="transition-all duration-500 rounded-full"
-                    style={{
-                      width:  i === paso ? '20px' : '5px',
-                      height: '5px',
-                      background: i < paso
-                        ? 'rgba(139,92,246,.6)'
-                        : i === paso
-                          ? 'linear-gradient(90deg,rgba(109,40,217,.8),rgba(167,139,250,.8))'
-                          : 'rgba(255,255,255,.07)',
-                    }}/>
-                ))}
-              </div>
-            </div>
+            <div ref={bodyRef} className="flex-1 overflow-y-auto chat-scroll px-4 py-4 space-y-3">
+              <BubbleBot className="msg-in" time={startedAt}>
+                Hola ✨ Soy {form.tarotista?.nombre ?? 'tu tarotista'}, tu guia en esta consulta. Te voy a hacer unas preguntas cortitas para preparar tu lectura.
+              </BubbleBot>
 
-            {/* Zona de contenido — scrollable. min-h-0 es obligatorio para que overflow-y funcione en flexbox */}
-            <div className="relative z-10 flex-1 min-h-0 overflow-y-auto modal-scroll">
-              <div
-                key={animKey}
-                className={animDir > 0 ? 's-r' : 's-l'}
-              >
-                {paso < 4 ? (
-                  <CampoRitual
-                    preguntaKey={paso}
-                    tipo={PREGUNTAS[paso].type}
-                    preguntaTexto={PREGUNTAS[paso].pregunta}
-                    placeholder={PREGUNTAS[paso].placeholder}
-                    valor={form[PREGUNTAS[paso].key]}
-                    onChange={v => set(PREGUNTAS[paso].key, v)}
-                    onEnter={siguiente}
-                    autoFocus
-                  />
-                ) : (
-                  <GridIntenciones
-                    valor={form.intenciones}
-                    onChange={v => set('intenciones', v)}
-                  />
-                )}
-              </div>
-            </div>
+              {pasosCompletados.map(i => (
+                <div key={i} className="space-y-2">
+                  <BubbleBot className="msg-in" time={startedAt}>{PREGUNTAS[i].pregunta}</BubbleBot>
+                  <BubbleUser>{formatValue(i, form)}</BubbleUser>
+                </div>
+              ))}
 
-            {/* Footer — fijo abajo */}
-            <div className="relative z-10 flex-shrink-0 px-5 pt-3 pb-5"
-              style={{borderTop:'1px solid rgba(255,255,255,.04)'}}>
-              {error && (
-                <p className="text-red-400/60 text-xs text-center mb-3 px-3 py-2 rounded-lg"
-                  style={{background:'rgba(220,38,38,.06)',border:'1px solid rgba(220,38,38,.1)'}}>
-                  {error}
-                </p>
+              {paso < 4 ? (
+                <>
+                  {botEscribiendo && <TypingBubble time={horaCorta()} />}
+                  {!botEscribiendo && (
+                    <BubbleBot className="msg-in" time={horaCorta()}>
+                      {PREGUNTAS[paso].pregunta}
+                    </BubbleBot>
+                  )}
+                </>
+              ) : (
+                <>
+                  {botEscribiendo && <TypingBubble time={horaCorta()} />}
+                  {!botEscribiendo && (
+                    <BubbleBot className="msg-in" time={horaCorta()}>
+                      Para enfocarme mejor, decime en que temas queres que profundice.
+                    </BubbleBot>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {INTENCIONES.map(({ label, icon, color }) => {
+                      const selected = form.intenciones.includes(label)
+                      return (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() => set('intenciones', selected
+                            ? form.intenciones.filter(v => v !== label)
+                            : [...form.intenciones, label])}
+                          className="flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs transition-all"
+                          style={{
+                            background: selected ? `linear-gradient(135deg,${color.replace('.6', '.15')},rgba(0,0,0,0))` : 'rgba(255,255,255,.03)',
+                            border: `1px solid ${selected ? color.replace('.6', '.35') : 'rgba(255,255,255,.08)'}`,
+                            color: selected ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.72)',
+                          }}
+                        >
+                          <span className="text-sm">{icon}</span>
+                          <span className="flex-1">{label}</span>
+                          {selected && <Check size={12} />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {form.intenciones.length > 0 && (
+                    <BubbleUser>Quiero consultar sobre: {form.intenciones.join(', ')}</BubbleUser>
+                  )}
+                </>
               )}
-              {paso > 0 ? (
-                <div className="flex items-center justify-between">
-                  <button onClick={() => irA(paso - 1)}
-                    className="text-white/25 hover:text-white/50 text-xs transition-colors px-3 py-2">
-                    ← Volver
+
+              {error && (
+                <div className="max-w-[90%] rounded-xl px-3 py-2 text-xs text-red-200"
+                  style={{ background: 'rgba(220,38,38,.15)', border: '1px solid rgba(220,38,38,.35)' }}>
+                  {error}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-white/10 p-3 bg-[#090517]">
+              <div className="flex items-end gap-2">
+                {paso > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => irA(paso - 1)}
+                    className="h-11 px-3 rounded-xl text-xs text-white/70 border border-white/15 hover:bg-white/5 transition-colors"
+                  >
+                    Volver
                   </button>
+                )}
+                {paso === 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setTarotistaConfirmada(false)}
+                    className="h-11 px-3 rounded-xl text-xs text-white/70 border border-white/15 hover:bg-white/5 transition-colors"
+                  >
+                    Cambiar tarotista
+                  </button>
+                )}
+
+                {paso < 4 ? (
+                  <>
+                    <input
+                      type={currentQuestion.type}
+                      value={form[currentQuestion.key]}
+                      onChange={e => set(currentQuestion.key, e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && enviarRespuestaActual()}
+                      placeholder={currentQuestion.placeholder}
+                      className="flex-1 h-11 rounded-xl px-3 text-sm bg-white/5 border border-white/10 focus:border-violet-400/60 outline-none text-white placeholder:text-white/35 [color-scheme:dark]"
+                    />
+                    <button
+                      onClick={enviarRespuestaActual}
+                      className="h-11 px-4 rounded-xl text-sm font-semibold inline-flex items-center gap-2 transition-all"
+                      style={{ background: 'linear-gradient(135deg,rgba(109,40,217,.9),rgba(139,92,246,.8))', color: 'white' }}
+                    >
+                      Responder <Send size={14} />
+                    </button>
+                  </>
+                ) : (
                   <button
                     onClick={siguiente}
-                    className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all active:scale-95"
-                    style={{
-                      background: 'linear-gradient(135deg,rgba(109,40,217,.7),rgba(139,92,246,.5))',
-                      border: '1px solid rgba(139,92,246,.25)',
-                      boxShadow: '0 0 28px rgba(109,40,217,.2)',
-                      color: 'rgba(255,255,255,.9)',
-                    }}>
-                    {paso === TOTAL_PASOS - 1
-                      ? <><Sparkles size={13} className="text-violet-300"/>Abrir mis Registros</>
-                      : <>Continuar <ArrowRight size={13}/></>
-                    }
+                    className="h-11 px-5 rounded-xl text-sm font-semibold inline-flex items-center gap-2 transition-all"
+                    style={{ background: 'linear-gradient(135deg,rgba(109,40,217,.9),rgba(139,92,246,.8))', color: 'white' }}
+                  >
+                    <Sparkles size={14} /> Abrir mis Registros
                   </button>
-                </div>
-              ) : (
-                <button
-                  onClick={siguiente}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full text-sm font-semibold transition-all active:scale-95"
-                  style={{
-                    background: 'linear-gradient(135deg,rgba(109,40,217,.7),rgba(139,92,246,.5))',
-                    border: '1px solid rgba(139,92,246,.25)',
-                    boxShadow: '0 0 28px rgba(109,40,217,.2)',
-                    color: 'rgba(255,255,255,.9)',
-                  }}>
-                  Continuar <ArrowRight size={13}/>
-                </button>
-              )}
+                )}
+              </div>
             </div>
           </>
         )}
 
-        {/* ── ANALIZANDO ── */}
         {estado === 'analyzing' && (
-          <div className="flex-1 min-h-0 overflow-y-auto modal-scroll">
-            <Analizando/>
-          </div>
+          <AnalizandoChat />
         )}
 
-        {/* ── PREVIEW ── */}
         {estado === 'preview' && (
-          <div className="relative reveal-glow flex-1 min-h-0 overflow-y-auto modal-scroll px-4 sm:px-7 pt-5 pb-6">
-            <div className="absolute inset-0 pointer-events-none"
-              style={{background:'radial-gradient(ellipse 80% 60% at 50% 100%,rgba(109,40,217,.1),transparent 70%)'}}/>
-
-            {/* Header */}
-            <div className="text-center mb-4 relative z-10">
-              <span className="text-violet-400/30 text-[10px] tracking-widest">✦ ◈ ✦</span>
-              <h2 className="font-playfair text-white text-xl font-bold mt-1">
-                Listo, <span style={{background:'linear-gradient(135deg,#c4b5fd,#a78bfa)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>{form.nombre.split(' ')[0]}</span>
-              </h2>
-            </div>
-
-            {/* Teaser — ancho completo en móvil */}
-            <div className="relative rounded-xl p-4 overflow-hidden mb-3 relative z-10"
-              style={{background:'linear-gradient(135deg,rgba(109,40,217,.12),rgba(79,46,220,.05))',border:'1px solid rgba(139,92,246,.18)'}}>
-              <div className="absolute inset-x-0 h-10 pointer-events-none opacity-20"
-                style={{background:'linear-gradient(180deg,transparent,rgba(139,92,246,.1),transparent)',animation:'scanline 4s linear infinite'}}/>
-              <p className="text-violet-400/50 text-[9px] uppercase tracking-widest mb-2">✦ Vista previa de tu lectura</p>
-              <p className="text-white/65 text-xs leading-relaxed italic relative z-10">"{teaser}"</p>
-            </div>
-
-            {/* Bloqueado + features en fila */}
-            <div className="relative rounded-xl overflow-hidden lock-pulse mb-3 relative z-10"
-              style={{border:'1px solid rgba(139,92,246,.2)'}}>
-              <div className="absolute inset-0"
-                style={{background:'linear-gradient(135deg,rgba(30,10,60,.92),rgba(10,5,30,.96))'}}/>
-              <div className="absolute inset-0 opacity-20 pointer-events-none"
-                style={{background:'linear-gradient(90deg,transparent,rgba(139,92,246,.15),transparent)',backgroundSize:'200% 100%',animation:'shimmer 3s linear infinite'}}/>
-              <div className="relative p-4 flex items-center gap-4">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{background:'rgba(109,40,217,.3)',border:'1px solid rgba(139,92,246,.4)'}}>
-                  <span className="text-violet-300">◈</span>
-                </div>
+          <div className="flex-1 overflow-y-auto chat-scroll px-4 py-4 space-y-3">
+            <BubbleBot className="msg-in" time={horaCorta()}>
+              Gracias por esperar, {form.nombre.split(' ')[0] || form.nombre}. Soy {form.tarotista?.nombre ?? 'tu tarotista'} y ya tengo la primera parte de tu lectura.
+            </BubbleBot>
+            <BubbleBot className="msg-in" time={horaCorta()} showAvatar={false}>
+              <p className="text-violet-200/90 text-xs uppercase tracking-wider mb-2">Vista previa</p>
+              <p className="text-white/85 italic">"{teaser}"</p>
+            </BubbleBot>
+            <BubbleBot className="msg-in" time={horaCorta()} showAvatar={false}>
+              Si queres, ahora podes desbloquear la lectura completa con todo el detalle: mision del alma, patrones karmicos, respuestas y guia final.
+            </BubbleBot>
+            <div className="max-w-[92%] rounded-2xl p-3"
+              style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }}>
+              <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-white/40 text-[9px] tracking-widest uppercase mb-1">Contenido bloqueado</p>
-                  <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                    {['✦ Misión del alma','◈ Bloqueos kármicos','☽ Amor y relaciones','⟡ Guardianes'].map((t,i)=>(
-                      <span key={i} className="text-white/25 text-[9px]">{t}</span>
-                    ))}
-                  </div>
+                  <p className="text-white text-sm font-semibold">Desbloqueo completo</p>
+                  <p className="text-violet-300/75 text-xs">Unico pago de 6€</p>
                 </div>
+                <button
+                  onClick={handlePagar}
+                  disabled={loadingPago}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-2 disabled:opacity-50"
+                  style={{ background: 'linear-gradient(135deg,#6d28d9,#8b5cf6)', color: 'white' }}
+                >
+                  {loadingPago ? 'Procesando...' : <><Sparkles size={14} /> Desbloquear</>}
+                </button>
               </div>
             </div>
-
-            {/* Precio + CTA */}
-            <div className="relative z-10 flex items-center gap-3 mb-3">
-              <div className="text-center flex-shrink-0 w-14">
-                <p className="font-playfair text-white/85 text-2xl font-bold leading-none">
-                  6<span className="text-violet-300/70 text-lg">€</span>
-                </p>
-                <p className="text-white/20 text-[9px] mt-0.5">único</p>
-              </div>
-              <button
-                onClick={handlePagar}
-                disabled={loadingPago}
-                className="btn-pulse relative flex-1 py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[.98] disabled:opacity-40 overflow-hidden"
-                style={{background:'linear-gradient(135deg,#6d28d9,#7c3aed,#8b5cf6)',border:'1px solid rgba(167,139,250,.3)',color:'rgba(255,255,255,.95)'}}>
-                <div className="absolute inset-0 pointer-events-none"
-                  style={{background:'linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent)',backgroundSize:'200% 100%',animation:'shimmer 2s linear infinite'}}/>
-                {loadingPago
-                  ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
-                  : <><Sparkles size={14} className="text-violet-200 relative z-10"/><span className="relative z-10">Desbloquear lectura completa</span></>
-                }
-              </button>
-            </div>
-
-            <p className="relative z-10 text-white/15 text-[9px] text-center">🔒 Pago seguro con Stripe · {form.email}</p>
+            <p className="text-[11px] text-white/35">Pago seguro con Stripe · {form.email}</p>
           </div>
         )}
       </div>
+      )}
     </div>
   )
 }
