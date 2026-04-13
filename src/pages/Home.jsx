@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import {
   Sparkles, BookOpen, Lock, Star, ChevronDown, ChevronUp,
   ArrowRight, Shield, Heart, Eye, Zap, Moon, CheckCircle,
@@ -460,7 +461,21 @@ function FAQs() {
 // ── Página ────────────────────────────────────────────────────────────────────
 export default function Home() {
   const [showModal, setShowModal] = useState(false)
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const resumeId = searchParams.get('resume')
+  const resumeCheckout = searchParams.get('checkout') === '1'
+
   const openModal = () => setShowModal(true)
+
+  const closeModal = () => {
+    setShowModal(false)
+    navigate({ pathname: '/', search: '' }, { replace: true })
+  }
+
+  useEffect(() => {
+    if (resumeId) setShowModal(true)
+  }, [resumeId])
 
   return (
     <div style={{ background:'#030312' }}>
@@ -476,7 +491,13 @@ export default function Home() {
         <FAQs />
       </main>
       <Footer />
-      {showModal && <ModalRegistros onClose={() => setShowModal(false)} />}
+      {showModal && (
+        <ModalRegistros
+          onClose={closeModal}
+          resumeConsultaId={resumeId}
+          resumeCheckout={resumeCheckout}
+        />
+      )}
     </div>
   )
 }

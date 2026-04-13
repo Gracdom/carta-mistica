@@ -62,6 +62,24 @@ const TAROTISTAS = [
   },
 ]
 
+function tarotistaFromSnapshot(s) {
+  if (!s?.id) return null
+  const full = TAROTISTAS.find(t => t.id === s.id)
+  if (full) return full
+  return {
+    id: s.id,
+    nombre: s.nombre ?? 'Tu tarotista',
+    especialidad: s.especialidad ?? 'General',
+    icon: '✦',
+    color: 'rgba(139,92,246,.65)',
+    foto: '/tarotistas/luna.png',
+    experiencia: '',
+    estilo: '',
+    descripcion: '',
+    tags: [],
+  }
+}
+
 const FRASES_LOADING = [
   'Estoy conectando con tus Registros...',
   'Dame unos segundos, ya casi termino...',
@@ -135,7 +153,7 @@ function TarotistaCardsGrid({ selectedId, onSelect }) {
             key={t.id}
             type="button"
             onClick={() => onSelect(t)}
-            className="relative overflow-hidden rounded-[18px] px-2.5 py-2.5 sm:px-3 sm:py-3 text-left text-xs transition-all min-h-[300px] flex flex-col"
+            className="relative overflow-hidden rounded-[18px] px-2.5 py-2.5 sm:px-3 sm:py-3 text-left text-xs transition-all min-h-[220px] sm:min-h-[300px] flex flex-col"
             style={{
               background: tarotistaCardBackground(t.color),
               border: `1px solid ${selected ? t.color.replace('.65', '.5') : 'rgba(255,255,255,.07)'}`,
@@ -306,7 +324,7 @@ function formatValue(paso, form) {
     }
   }
   if (paso === 3) return form.lugar || 'No indicado'
-  return form.intenciones.join(', ')
+  return (form.intenciones ?? []).join(', ')
 }
 
 function AnalizandoChat() {
@@ -316,7 +334,7 @@ function AnalizandoChat() {
     return () => clearInterval(t)
   }, [])
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+    <div className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-4 py-4 space-y-3 overscroll-contain">
       <BubbleBot>
         Estoy consultando tus Registros. Esto puede tomar unos segundos...
       </BubbleBot>
@@ -333,17 +351,19 @@ function AnalizandoChat() {
 }
 
 // ── Modal principal ───────────────────────────────────────────────────────────
-export default function ModalRegistros({ onClose }) {
+export default function ModalRegistros({ onClose, resumeConsultaId = null, resumeCheckout = false }) {
   const [estado, setEstado]         = useState('form')
   const [paso, setPaso]             = useState(0)       // 0-3 = 4 preguntas, 4 = intenciones
   const [form, setForm]             = useState({ nombre:'', fechaNacimiento:'', lugar:'', intenciones:[], email:'', tarotista: null })
   const [tarotistaConfirmada, setTarotistaConfirmada] = useState(false)
+  const [pendingResumeStep, setPendingResumeStep] = useState(null) // número de paso al retomar tras elegir tarotista
   const [teaser, setTeaser]         = useState('')
   const [consultaId, setConsultaId] = useState(null)
   const [loadingPago, setLoadingPago] = useState(false)
   const [error, setError]           = useState('')
   const [botEscribiendo, setBotEscribiendo] = useState(true)
   const bodyRef = useRef(null)
+  const autoCheckoutStarted = useRef(false)
   const startedAt = useMemo(() => horaCorta(), [])
 
   useEffect(() => {
@@ -351,6 +371,67 @@ export default function ModalRegistros({ onClose }) {
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
   }, [onClose])
+
+  useEffect(() => {
+    if (!resumeConsultaId) return
+
+    let cancelled = false
+    ;(async () => {
+      setError('')
+      try {
+        const { data, error: fnErr } = await supabase.functions.invoke('resume-consulta', {
+          body: { consultaId: resumeConsultaId },
+        })
+        if (cancelled) return
+        if (fnErr || data?.error) {
+          setError(typeof data?.error === 'string' ? data.error : fnErr?.message || 'No se pudo recuperar tu consulta.')
+          return
+        }
+        const c = data?.consulta
+        if (!c) {
+          setError('Consulta no encontrada.')
+          return
+        }
+
+        const snap = c.snapshot_formulario || {}
+        const tObj = tarotistaFromSnapshot(
+          snap.tarotista ||
+            (c.tarotista_id
+              ? { id: c.tarotista_id, nombre: c.tarotista_nombre, especialidad: c.tarotista_especialidad }
+              : null)
+        )
+
+        setForm({
+          nombre: c.nombre || snap.nombre || '',
+          email: c.email || snap.email || '',
+          fechaNacimiento: c.fecha_nacimiento || snap.fechaNacimiento || '',
+          lugar: c.lugar_nacimiento || snap.lugar || '',
+          intenciones: Array.isArray(c.intenciones) ? c.intenciones : (snap.intenciones || []),
+          tarotista: tObj,
+        })
+        setConsultaId(c.id)
+
+        const tienePreview = c.estado === 'preview' && String(c.lectura_teaser || '').trim() !== ''
+        if (tienePreview) {
+          setTeaser(c.lectura_teaser)
+          setEstado('preview')
+          setTarotistaConfirmada(true)
+          setPaso(4)
+          setPendingResumeStep(null)
+          return
+        }
+
+        const wp = typeof c.wizard_paso === 'number' ? c.wizard_paso : 0
+        setPendingResumeStep(Math.min(Math.max(wp, 0), 4))
+        setTarotistaConfirmada(false)
+        setEstado('form')
+      } catch (e) {
+        if (!cancelled) setError(e.message || 'Error al cargar tu consulta.')
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [resumeConsultaId])
 
   const set = (k, v) => setForm(f => ({...f, [k]: v}))
 
@@ -372,13 +453,14 @@ export default function ModalRegistros({ onClose }) {
   }
 
   // Guarda o actualiza la consulta en Supabase con los datos disponibles hasta el paso actual
-  const guardarParcial = async (formActual, idActual) => {
+  const guardarParcial = async (formActual, idActual, wizardPaso) => {
     try {
+      const row = { ...filaConsultaDb(formActual), wizard_paso: wizardPaso }
       if (!idActual) {
         const { data, error: dbErr } = await supabase
           .from('consultas_akasicas')
           .insert({
-            ...filaConsultaDb(formActual),
+            ...row,
             estado: 'incompleto',
           })
           .select('id').single()
@@ -387,7 +469,7 @@ export default function ModalRegistros({ onClose }) {
       }
       const { error: dbErr } = await supabase
         .from('consultas_akasicas')
-        .update(filaConsultaDb(formActual))
+        .update(row)
         .eq('id', idActual)
       if (dbErr) console.error('DB update:', dbErr)
       return idActual
@@ -399,7 +481,8 @@ export default function ModalRegistros({ onClose }) {
 
   const siguiente = async () => {
     if (!validar()) return
-    const nuevoId = await guardarParcial(form, consultaId)
+    const nextWizardPaso = paso < TOTAL_PASOS - 1 ? paso + 1 : paso
+    const nuevoId = await guardarParcial(form, consultaId, nextWizardPaso)
     const idActivo = nuevoId || consultaId
     if (nuevoId && nuevoId !== consultaId) setConsultaId(nuevoId)
 
@@ -420,6 +503,7 @@ export default function ModalRegistros({ onClose }) {
             ...filaConsultaDb(form),
             pregunta_enviada: pregunta,
             estado: 'pendiente',
+            wizard_paso: 4,
           })
           .eq('id', id)
       }
@@ -445,6 +529,7 @@ export default function ModalRegistros({ onClose }) {
             lectura_teaser: data.teaser,
             lectura_completa: data.completa,
             estado: 'preview',
+            wizard_paso: 4,
             ...filaConsultaDb(form),
             pregunta_enviada: pregunta,
           })
@@ -473,6 +558,26 @@ export default function ModalRegistros({ onClose }) {
     return () => clearTimeout(t)
   }, [paso, estado, tarotistaConfirmada])
 
+  useEffect(() => {
+    if (!resumeCheckout || estado !== 'preview' || !consultaId || autoCheckoutStarted.current) return
+    autoCheckoutStarted.current = true
+    ;(async () => {
+      setLoadingPago(true)
+      try {
+        const { data, error: fnErr } = await supabase.functions.invoke('create-checkout', {
+          body: { consultaId, email: form.email, nombre: form.nombre },
+        })
+        if (fnErr || data?.error) throw new Error(data?.error || fnErr?.message)
+        if (data?.url) window.location.href = data.url
+      } catch (err) {
+        alert(err.message)
+        autoCheckoutStarted.current = false
+      } finally {
+        setLoadingPago(false)
+      }
+    })()
+  }, [resumeCheckout, estado, consultaId, form.email, form.nombre])
+
   const currentQuestion = paso < 4 ? PREGUNTAS[paso] : null
   const pasosCompletados = useMemo(() => Array.from({ length: paso }, (_, i) => i), [paso])
 
@@ -497,7 +602,7 @@ export default function ModalRegistros({ onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] pt-[max(0.5rem,env(safe-area-inset-top,0px))] overflow-x-hidden overflow-y-auto"
       style={{ background: 'rgba(2,1,14,.92)', backdropFilter: 'blur(20px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
@@ -513,7 +618,7 @@ export default function ModalRegistros({ onClose }) {
 
       {estado === 'form' && !tarotistaConfirmada ? (
         <div
-          className="relative w-full max-w-[min(100%,72rem)] flex flex-col rounded-2xl overflow-hidden"
+          className="relative w-full max-w-[min(100%,72rem)] flex flex-col min-h-0 rounded-2xl overflow-hidden my-auto sm:my-0"
           style={{
             background: '#05030f',
             boxShadow: '0 0 80px rgba(109,40,217,.2), 0 0 0 1px rgba(139,92,246,.1)',
@@ -521,7 +626,7 @@ export default function ModalRegistros({ onClose }) {
           }}
           onClick={e => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#090517]">
+          <div className="flex shrink-0 items-center justify-between px-3 sm:px-4 py-3 border-b border-white/10 bg-[#090517]">
             <p className="text-white text-sm font-semibold">Elegí tu tarotista</p>
             <button
               type="button"
@@ -531,7 +636,7 @@ export default function ModalRegistros({ onClose }) {
               <X size={14} />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto chat-scroll px-4 py-5 space-y-4 min-h-0">
+          <div className="flex-1 min-h-0 overflow-y-auto chat-scroll px-3 sm:px-4 py-4 sm:py-5 space-y-4 overscroll-contain">
             <p className="text-white/90 text-sm text-center leading-relaxed px-1">
               Antes de empezar, ¿con cual tarotista queres hablar?
             </p>
@@ -564,7 +669,8 @@ export default function ModalRegistros({ onClose }) {
                   return
                 }
                 setTarotistaConfirmada(true)
-                setPaso(0)
+                setPaso(pendingResumeStep == null ? 0 : pendingResumeStep)
+                setPendingResumeStep(null)
               }}
               className="w-full h-11 px-5 rounded-xl text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all"
               style={{ background: 'linear-gradient(135deg,rgba(109,40,217,.9),rgba(139,92,246,.8))', color: 'white' }}
@@ -575,20 +681,20 @@ export default function ModalRegistros({ onClose }) {
         </div>
       ) : (
       <div
-        className="relative w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden"
+        className="relative w-full max-w-2xl flex flex-col min-h-0 rounded-2xl overflow-hidden my-auto sm:my-0"
         style={{
           background: '#05030f',
           boxShadow: '0 0 80px rgba(109,40,217,.2), 0 0 0 1px rgba(139,92,246,.1)',
           maxHeight: 'min(90svh, 90vh)',
         }}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#090517]">
+        <div className="flex shrink-0 items-center justify-between px-3 sm:px-4 py-3 border-b border-white/10 bg-[#090517]">
           <div className="min-w-0 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0"
               style={{ background: 'rgba(109,40,217,.35)', border: '1px solid rgba(167,139,250,.4)' }}>
               ✦
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-white text-sm font-semibold truncate">Consulta de Registros Akashicos</p>
               <p className="text-violet-300/65 text-xs">En linea</p>
             </div>
@@ -601,7 +707,7 @@ export default function ModalRegistros({ onClose }) {
 
         {estado === 'form' && (
           <>
-            <div ref={bodyRef} className="flex-1 overflow-y-auto chat-scroll px-4 py-4 space-y-3">
+            <div ref={bodyRef} className="flex-1 min-h-0 overflow-y-auto chat-scroll px-3 sm:px-4 py-4 space-y-3 overscroll-contain">
               <BubbleBot className="msg-in" time={startedAt}>
                 Hola ✨ Soy {form.tarotista?.nombre ?? 'tu tarotista'}, tu guia en esta consulta. Te voy a hacer unas preguntas cortitas para preparar tu lectura.
               </BubbleBot>
@@ -668,49 +774,57 @@ export default function ModalRegistros({ onClose }) {
               )}
             </div>
 
-            <div className="border-t border-white/10 p-3 bg-[#090517]">
-              <div className="flex items-end gap-2">
-                {paso > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => irA(paso - 1)}
-                    className="h-11 px-3 rounded-xl text-xs text-white/70 border border-white/15 hover:bg-white/5 transition-colors"
-                  >
-                    Volver
-                  </button>
-                )}
-                {paso === 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setTarotistaConfirmada(false)}
-                    className="h-11 px-3 rounded-xl text-xs text-white/70 border border-white/15 hover:bg-white/5 transition-colors"
-                  >
-                    Cambiar tarotista
-                  </button>
-                )}
+            <div className="border-t border-white/10 p-3 bg-[#090517] shrink-0">
+              <div className="flex flex-col gap-2 min-w-0">
+                <div className="flex flex-wrap gap-2 items-center">
+                  {paso > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const np = paso - 1
+                        irA(np)
+                        if (consultaId) void guardarParcial(form, consultaId, np)
+                      }}
+                      className="h-11 px-3 rounded-xl text-xs text-white/70 border border-white/15 hover:bg-white/5 transition-colors"
+                    >
+                      Volver
+                    </button>
+                  )}
+                  {paso === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setTarotistaConfirmada(false)}
+                      className="h-11 px-3 rounded-xl text-xs text-white/70 border border-white/15 hover:bg-white/5 transition-colors"
+                    >
+                      Cambiar tarotista
+                    </button>
+                  )}
+                </div>
 
                 {paso < 4 ? (
-                  <>
+                  <div className="flex flex-col sm:flex-row gap-2 min-w-0 sm:items-stretch">
                     <input
                       type={currentQuestion.type}
                       value={form[currentQuestion.key]}
                       onChange={e => set(currentQuestion.key, e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && enviarRespuestaActual()}
                       placeholder={currentQuestion.placeholder}
-                      className="flex-1 h-11 rounded-xl px-3 text-sm bg-white/5 border border-white/10 focus:border-violet-400/60 outline-none text-white placeholder:text-white/35 [color-scheme:dark]"
+                      className="w-full min-w-0 flex-1 h-11 rounded-xl px-3 text-sm bg-white/5 border border-white/10 focus:border-violet-400/60 outline-none text-white placeholder:text-white/35 [color-scheme:dark]"
                     />
                     <button
+                      type="button"
                       onClick={enviarRespuestaActual}
-                      className="h-11 px-4 rounded-xl text-sm font-semibold inline-flex items-center gap-2 transition-all"
+                      className="h-11 w-full sm:w-auto shrink-0 px-4 rounded-xl text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all"
                       style={{ background: 'linear-gradient(135deg,rgba(109,40,217,.9),rgba(139,92,246,.8))', color: 'white' }}
                     >
                       Responder <Send size={14} />
                     </button>
-                  </>
+                  </div>
                 ) : (
                   <button
+                    type="button"
                     onClick={siguiente}
-                    className="h-11 px-5 rounded-xl text-sm font-semibold inline-flex items-center gap-2 transition-all"
+                    className="h-11 w-full px-5 rounded-xl text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all"
                     style={{ background: 'linear-gradient(135deg,rgba(109,40,217,.9),rgba(139,92,246,.8))', color: 'white' }}
                   >
                     <Sparkles size={14} /> Abrir mis Registros
@@ -722,11 +836,13 @@ export default function ModalRegistros({ onClose }) {
         )}
 
         {estado === 'analyzing' && (
-          <AnalizandoChat />
+          <div className="flex-1 min-h-0 flex flex-col">
+            <AnalizandoChat />
+          </div>
         )}
 
         {estado === 'preview' && (
-          <div className="flex-1 overflow-y-auto chat-scroll px-4 py-4 space-y-3">
+          <div className="flex-1 min-h-0 overflow-y-auto chat-scroll px-3 sm:px-4 py-4 space-y-3 overscroll-contain">
             <BubbleBot className="msg-in" time={horaCorta()}>
               Gracias por esperar, {form.nombre.split(' ')[0] || form.nombre}. Soy {form.tarotista?.nombre ?? 'tu tarotista'} y ya tengo la primera parte de tu lectura.
             </BubbleBot>
@@ -739,15 +855,16 @@ export default function ModalRegistros({ onClose }) {
             </BubbleBot>
             <div className="max-w-[92%] rounded-2xl p-3"
               style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }}>
-              <div className="flex items-center justify-between gap-4">
-                <div>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="min-w-0">
                   <p className="text-white text-sm font-semibold">Desbloqueo completo</p>
                   <p className="text-violet-300/75 text-xs">Unico pago de 6€</p>
                 </div>
                 <button
+                  type="button"
                   onClick={handlePagar}
                   disabled={loadingPago}
-                  className="px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-2 disabled:opacity-50"
+                  className="w-full sm:w-auto shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50"
                   style={{ background: 'linear-gradient(135deg,#6d28d9,#8b5cf6)', color: 'white' }}
                 >
                   {loadingPago ? 'Procesando...' : <><Sparkles size={14} /> Desbloquear</>}

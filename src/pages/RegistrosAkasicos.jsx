@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Sparkles, Lock, BookOpen, Star } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import Header from '../components/Header'
@@ -54,6 +55,16 @@ function TextoFormateado({ texto }) {
 }
 
 export default function RegistrosAkasicos() {
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const r = searchParams.get('resume')
+    if (!r) return
+    const checkout = searchParams.get('checkout') === '1' ? '&checkout=1' : ''
+    navigate(`/?resume=${encodeURIComponent(r)}${checkout}`, { replace: true })
+  }, [searchParams, navigate])
+
   const [form, setForm] = useState({
     nombre: '', fechaNacimiento: '', lugar: '', pregunta: ''
   })

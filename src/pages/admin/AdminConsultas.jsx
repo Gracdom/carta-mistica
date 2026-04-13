@@ -92,6 +92,7 @@ function Drawer({ consulta: c, onClose, onDelete, onRecovery, sendingRecovery })
             <Field label="Nacimiento"  value={c.fecha_nacimiento} />
             <Field label="Lugar"       value={c.lugar_nacimiento} />
             <Field label="Fecha"       value={fmt(c.created_at)} />
+            {c.wizard_paso != null && <Field label="Paso wizard" value={String(c.wizard_paso)} />}
             {c.stripe_session_id && <Field label="Stripe ID" value={c.stripe_session_id} mono />}
           </Section>
 
@@ -310,6 +311,7 @@ export default function AdminConsultas() {
       'tarotista_especialidad',
       'pregunta_enviada',
       'snapshot_formulario',
+      'wizard_paso',
       'recovery_step',
       'recovery_last_sent_at',
       'created_at',
@@ -329,6 +331,7 @@ export default function AdminConsultas() {
       c.tarotista_especialidad ?? '',
       c.pregunta_enviada ?? '',
       c.snapshot_formulario != null ? JSON.stringify(c.snapshot_formulario) : '',
+      c.wizard_paso ?? '',
       c.recovery_step ?? 0,
       c.recovery_last_sent_at ?? '',
       c.created_at ?? '',

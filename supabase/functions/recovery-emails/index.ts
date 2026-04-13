@@ -11,6 +11,10 @@
  *
  * Secrets requeridos (Supabase → Settings → Edge Functions → Secrets):
  *   RESEND_API_KEY, EMAIL_FROM, SITE_URL
+ *
+ * Enlaces CTA: con vista previa (estado preview + teaser) → `/?resume=<uuid>&checkout=1`
+ * (Stripe al volver del checkout usa el mismo resume). Sin preview → `/?resume=<uuid>`
+ * (modal: elegir tarotista y retomar wizard_paso).
  */
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
@@ -23,6 +27,22 @@ const supabase = createClient(
 const resendKey  = Deno.env.get('RESEND_API_KEY') ?? ''
 const emailFrom  = Deno.env.get('EMAIL_FROM') ?? 'Carta Mística <noreply@cartamistica.com>'
 const siteUrl    = Deno.env.get('SITE_URL') ?? 'https://cartamistica.com'
+
+/** Enlace al home con retoma: vista previa lista → checkout Stripe; si no, wizard (tarotista + paso guardado). */
+function recoveryCtaUrl(c: { id: string; estado?: string | null; lectura_teaser?: string | null }) {
+  const tienePreview =
+    c.estado === 'preview' && typeof c.lectura_teaser === 'string' && c.lectura_teaser.trim() !== ''
+  if (tienePreview) return `${siteUrl}/?resume=${c.id}&checkout=1`
+  return `${siteUrl}/?resume=${c.id}`
+}
+
+function escapeHtml(s: string) {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 async function sendEmail(to: string, subject: string, html: string) {
@@ -58,22 +78,36 @@ function emailBase(contenido: string) {
 </html>`
 }
 
-function email1Html(nombre: string, teaser: string) {
+function email1Html(nombre: string, teaser: string, ctaUrl: string) {
+  const teaserSafe = escapeHtml(teaser)
+  const bloqueTeaser = teaser.trim()
+    ? `<div style="background:rgba(0,0,0,.3);border-left:3px solid #a78bfa;padding:16px 20px;border-radius:8px;margin-bottom:24px;">
+        <p style="color:#d4bbff;font-style:italic;margin:0;font-size:15px;line-height:1.7;">"${teaserSafe}"</p>
+      </div>`
+    : `<p style="color:#9ca3af;font-size:14px;line-height:1.7;margin:0 0 20px;">
+        Retomá tu consulta: primero elegí con qué tarotista querés conectar y después seguimos exactamente donde la dejaste.
+      </p>`
+
+  const ctaLabel = teaser.trim() ? '✦ Desbloquear mi lectura completa' : '✦ Continuar mi consulta'
+  const cuerpoExtra = teaser.trim()
+    ? `<p style="color:#9ca3af;font-size:14px;line-height:1.7;margin:0 0 24px;">
+        Este es solo el inicio. Tu lectura completa contiene el mensaje que tu alma necesita escuchar: 
+        tu misión de vida, los bloqueos kármicos que te frenan y la respuesta directa desde los Registros.
+      </p>`
+    : `<p style="color:#9ca3af;font-size:14px;line-height:1.7;margin:0 0 24px;">
+        Vas a elegir con qué tarotista querés conectar y seguir exactamente donde dejaste el formulario.
+      </p>`
+
   return emailBase(`
     <div style="background:linear-gradient(135deg,rgba(109,40,217,.2),rgba(139,92,246,.08));border:1px solid rgba(139,92,246,.35);border-radius:16px;padding:32px 28px;margin-bottom:24px;">
       <h1 style="font-size:22px;color:#fff;margin:0 0 8px;font-family:Georgia,serif;">
-        Tu Registro Akáshico está esperando, ${nombre}
+        Tu Registro Akáshico está esperando, ${escapeHtml(nombre)}
       </h1>
       <p style="color:#a78bfa;font-size:13px;margin:0 0 20px;letter-spacing:.05em;">Los Guardianes abrieron tu portal hace una hora</p>
-      <div style="background:rgba(0,0,0,.3);border-left:3px solid #a78bfa;padding:16px 20px;border-radius:8px;margin-bottom:24px;">
-        <p style="color:#d4bbff;font-style:italic;margin:0;font-size:15px;line-height:1.7;">"${teaser}"</p>
-      </div>
-      <p style="color:#9ca3af;font-size:14px;line-height:1.7;margin:0 0 24px;">
-        Este es solo el inicio. Tu lectura completa contiene el mensaje que tu alma necesita escuchar: 
-        tu misión de vida, los bloqueos kármicos que te frenan y la respuesta directa desde los Registros.
-      </p>
-      <a href="${siteUrl}" style="display:inline-block;background:linear-gradient(135deg,#6d28d9,#9333ea);color:#fff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:bold;">
-        ✦ Desbloquear mi lectura completa
+      ${bloqueTeaser}
+      ${cuerpoExtra}
+      <a href="${ctaUrl}" style="display:inline-block;background:linear-gradient(135deg,#6d28d9,#9333ea);color:#fff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:bold;">
+        ${ctaLabel}
       </a>
     </div>
     <p style="color:#4c3775;font-size:12px;text-align:center;margin:0;">
@@ -81,12 +115,12 @@ function email1Html(nombre: string, teaser: string) {
     </p>`)
 }
 
-function email2Html(nombre: string) {
+function email2Html(nombre: string, ctaUrl: string) {
   return emailBase(`
     <div style="background:linear-gradient(135deg,rgba(147,51,234,.15),rgba(109,40,217,.08));border:1px solid rgba(139,92,246,.3);border-radius:16px;padding:32px 28px;margin-bottom:24px;">
       <p style="color:#f59e0b;font-size:12px;letter-spacing:.1em;font-family:Arial,sans-serif;margin:0 0 12px;">☽ MENSAJE DE TUS GUARDIANES</p>
       <h1 style="font-size:22px;color:#fff;margin:0 0 16px;font-family:Georgia,serif;">
-        ${nombre}, hay algo que debés saber
+        ${escapeHtml(nombre)}, hay algo que debés saber
       </h1>
       <p style="color:#c4a8e8;font-size:15px;line-height:1.75;margin:0 0 20px;">
         Es inusual que un alma llegue tan lejos — completar el formulario, recibir el teaser — 
@@ -105,18 +139,18 @@ function email2Html(nombre: string) {
           <span style="color:#a78bfa;">✦</span> Mensaje especial de tus Guardianes
         </p>
       </div>
-      <a href="${siteUrl}" style="display:inline-block;background:linear-gradient(135deg,#6d28d9,#9333ea);color:#fff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:bold;">
+      <a href="${ctaUrl}" style="display:inline-block;background:linear-gradient(135deg,#6d28d9,#9333ea);color:#fff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:bold;">
         Recibir mi lectura completa ahora
       </a>
     </div>`)
 }
 
-function email3Html(nombre: string) {
+function email3Html(nombre: string, ctaUrl: string) {
   return emailBase(`
     <div style="border:1px solid rgba(239,68,68,.3);border-radius:16px;padding:32px 28px;margin-bottom:24px;background:linear-gradient(135deg,rgba(109,40,217,.12),rgba(239,68,68,.05));">
       <p style="color:#f87171;font-size:12px;letter-spacing:.1em;font-family:Arial,sans-serif;margin:0 0 12px;">⚠️ ÚLTIMO AVISO</p>
       <h1 style="font-size:22px;color:#fff;margin:0 0 16px;font-family:Georgia,serif;">
-        El portal akáshico de ${nombre} está por cerrarse
+        El portal akáshico de ${escapeHtml(nombre)} está por cerrarse
       </h1>
       <p style="color:#c4a8e8;font-size:15px;line-height:1.75;margin:0 0 16px;">
         Este es nuestro último mensaje. Después de esto, archivaremos tu consulta 
@@ -126,7 +160,7 @@ function email3Html(nombre: string) {
         Los Registros Akáshicos no siempre están disponibles. La puerta que se abrió 
         para vos tiene una energía particular — y esa energía no dura para siempre.
       </p>
-      <a href="${siteUrl}" style="display:inline-block;background:linear-gradient(135deg,#6d28d9,#9333ea);color:#fff;text-decoration:none;padding:16px 36px;border-radius:50px;font-size:16px;font-weight:bold;">
+      <a href="${ctaUrl}" style="display:inline-block;background:linear-gradient(135deg,#6d28d9,#9333ea);color:#fff;text-decoration:none;padding:16px 36px;border-radius:50px;font-size:16px;font-weight:bold;">
         ✦ Abrir mi portal antes de que se cierre
       </a>
       <p style="color:#6b7280;font-size:12px;margin:20px 0 0;">
@@ -150,13 +184,20 @@ const err = (msg: string) =>
 // ── Envío manual de email de recuperación a una consulta específica ───────────
 async function enviarManual(consultaId: string, step: number, emailFallback?: string) {
   const id = consultaId.trim()
-  let c: { id: string; nombre: string; email: string | null; lectura_teaser: string | null; recovery_step: number | null } | null = null
+  let c: {
+    id: string
+    nombre: string
+    email: string | null
+    lectura_teaser: string | null
+    recovery_step: number | null
+    estado: string | null
+  } | null = null
 
   // Intento principal: búsqueda por ID exacto
   if (id) {
     const { data } = await supabase
       .from('consultas_akasicas')
-      .select('id, nombre, email, lectura_teaser, recovery_step')
+      .select('id, nombre, email, lectura_teaser, recovery_step, estado')
       .eq('id', id)
       .maybeSingle()
     c = data
@@ -166,7 +207,7 @@ async function enviarManual(consultaId: string, step: number, emailFallback?: st
   if (!c && id.length >= 6 && !id.includes('-')) {
     const { data } = await supabase
       .from('consultas_akasicas')
-      .select('id, nombre, email, lectura_teaser, recovery_step')
+      .select('id, nombre, email, lectura_teaser, recovery_step, estado')
       .order('created_at', { ascending: false })
       .limit(300)
 
@@ -179,7 +220,7 @@ async function enviarManual(consultaId: string, step: number, emailFallback?: st
   if (!c && emailFallback?.trim()) {
     const { data } = await supabase
       .from('consultas_akasicas')
-      .select('id, nombre, email, lectura_teaser, recovery_step')
+      .select('id, nombre, email, lectura_teaser, recovery_step, estado')
       .ilike('email', emailFallback.trim())
       .order('created_at', { ascending: false })
       .limit(1)
@@ -193,15 +234,17 @@ async function enviarManual(consultaId: string, step: number, emailFallback?: st
   const now = new Date().toISOString()
   let subject = '', html = ''
 
+  const cta = recoveryCtaUrl(c)
+
   if (step === 1) {
     subject = `✦ Tu Registro Akáshico está esperando, ${c.nombre}`
-    html    = email1Html(c.nombre, c.lectura_teaser ?? '')
+    html    = email1Html(c.nombre, c.lectura_teaser ?? '', cta)
   } else if (step === 2) {
     subject = `☽ ${c.nombre}, hay algo que debés saber`
-    html    = email2Html(c.nombre)
+    html    = email2Html(c.nombre, cta)
   } else if (step === 3) {
     subject = `⚠️ Último aviso — el portal de ${c.nombre} está por cerrarse`
-    html    = email3Html(c.nombre)
+    html    = email3Html(c.nombre, cta)
   } else {
     return { ok: false, error: `Step inválido: ${step}. Usá 1, 2 o 3.` }
   }
@@ -250,7 +293,7 @@ Deno.serve(async (req) => {
     // Email 1: 1h después del teaser
     const { data: pendientes1 } = await supabase
       .from('consultas_akasicas')
-      .select('id, nombre, email, lectura_teaser')
+      .select('id, nombre, email, lectura_teaser, estado')
       .eq('estado', 'preview')
       .eq('recovery_step', 0)
       .not('lectura_teaser', 'is', null)
@@ -258,10 +301,11 @@ Deno.serve(async (req) => {
       .lt('created_at', new Date(now.getTime() - 60 * 60 * 1000).toISOString())
 
     for (const c of pendientes1 ?? []) {
+      const cta = recoveryCtaUrl(c)
       const sent = await sendEmail(
         c.email,
         `✦ Tu Registro Akáshico está esperando, ${c.nombre}`,
-        email1Html(c.nombre, c.lectura_teaser ?? '')
+        email1Html(c.nombre, c.lectura_teaser ?? '', cta)
       )
       if (sent) {
         await supabase.from('consultas_akasicas')
@@ -274,16 +318,17 @@ Deno.serve(async (req) => {
     // Email 2: 24h después del Email 1
     const { data: pendientes2 } = await supabase
       .from('consultas_akasicas')
-      .select('id, nombre, email')
+      .select('id, nombre, email, estado, lectura_teaser')
       .eq('estado', 'preview')
       .eq('recovery_step', 1)
       .lt('recovery_last_sent_at', new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString())
 
     for (const c of pendientes2 ?? []) {
+      const cta = recoveryCtaUrl(c)
       const sent = await sendEmail(
         c.email,
         `☽ ${c.nombre}, hay algo que debés saber`,
-        email2Html(c.nombre)
+        email2Html(c.nombre, cta)
       )
       if (sent) {
         await supabase.from('consultas_akasicas')
@@ -296,16 +341,17 @@ Deno.serve(async (req) => {
     // Email 3: 48h después del Email 2
     const { data: pendientes3 } = await supabase
       .from('consultas_akasicas')
-      .select('id, nombre, email')
+      .select('id, nombre, email, estado, lectura_teaser')
       .eq('estado', 'preview')
       .eq('recovery_step', 2)
       .lt('recovery_last_sent_at', new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString())
 
     for (const c of pendientes3 ?? []) {
+      const cta = recoveryCtaUrl(c)
       const sent = await sendEmail(
         c.email,
         `⚠️ Último aviso — el portal de ${c.nombre} está por cerrarse`,
-        email3Html(c.nombre)
+        email3Html(c.nombre, cta)
       )
       if (sent) {
         await supabase.from('consultas_akasicas')

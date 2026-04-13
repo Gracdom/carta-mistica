@@ -137,6 +137,15 @@ export default function Footer() {
             ))}
           </div>
         </div>
+
+        <div className="mt-8 pt-6 border-t border-white/5 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+          <span className="text-gray-500 text-xs sm:text-sm">Grupo</span>
+          <img
+            src="/grupo-gracdom.png"
+            alt="GRACDOM"
+            className="h-5 sm:h-6 w-auto max-w-[min(100%,200px)] object-contain"
+          />
+        </div>
       </div>
     </footer>
   )

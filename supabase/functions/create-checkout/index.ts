@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
         email,
       },
       success_url: `${siteUrl}/pago-exitoso?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url:  siteUrl,
+      cancel_url:  `${siteUrl}/?resume=${consultaId}&checkout=1`,
     })
 
     return new Response(
