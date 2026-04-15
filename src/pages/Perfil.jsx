@@ -5,6 +5,7 @@ import {
   CheckCircle, XCircle, Shield, Lock, ChevronDown, ChevronUp, Loader2
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { fotoTarotista } from '../lib/tarotistaFotos'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 
@@ -40,6 +41,8 @@ export default function Perfil() {
         .single()
 
       if (tarotista) {
+        const slug = tarotista.slug
+        const foto = fotoTarotista(slug, tarotista.foto_url)
         setT({
           ...tarotista,
           reseñas: tarotista['reseñas_count'],
@@ -51,7 +54,7 @@ export default function Perfil() {
           precioPromoLlamada: tarotista.precio_promo_llamada,
           descuentoPromo: tarotista.descuento_promo,
           minutosGratis: tarotista.minutos_gratis,
-          foto: tarotista.foto_url,
+          foto,
           descripcionServicios: tarotista.descripcion_servicios,
           sobreMi: tarotista.sobre_mi,
           serviciosAdicionales: tarotista.servicios_adicionales,

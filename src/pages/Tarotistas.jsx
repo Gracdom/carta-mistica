@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { SlidersHorizontal, X, Search, ChevronDown, Loader2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { fotoTarotista } from '../lib/tarotistaFotos'
 import TarotistCard from '../components/TarotistCard'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
@@ -82,21 +83,25 @@ export default function Tarotistas() {
         .order('rating', { ascending: false })
       if (!error && data) {
         // Normalizar campo reseñas_count -> reseñas para compatibilidad con TarotistCard
-        setTarotistas(data.map(t => ({
-          ...t,
-          id: t.slug,
-          reseñas: t['reseñas_count'],
-          lecturas: t.lecturas_count,
-          precioPorMinuto: t.precio_por_minuto,
-          precioChat: t.precio_chat,
-          precioLlamada: t.precio_llamada,
-          precioPromoChat: t.precio_promo_chat,
-          precioPromoLlamada: t.precio_promo_llamada,
-          descuentoPromo: t.descuento_promo,
-          minutosGratis: t.minutos_gratis,
-          fotoUrl: t.foto_url,
-          foto: t.foto_url,
-        })))
+        setTarotistas(data.map(t => {
+          const slug = t.slug
+          const foto = fotoTarotista(slug, t.foto_url)
+          return {
+            ...t,
+            id: slug,
+            reseñas: t['reseñas_count'],
+            lecturas: t.lecturas_count,
+            precioPorMinuto: t.precio_por_minuto,
+            precioChat: t.precio_chat,
+            precioLlamada: t.precio_llamada,
+            precioPromoChat: t.precio_promo_chat,
+            precioPromoLlamada: t.precio_promo_llamada,
+            descuentoPromo: t.descuento_promo,
+            minutosGratis: t.minutos_gratis,
+            fotoUrl: foto,
+            foto,
+          }
+        }))
       }
       setLoading(false)
     }
