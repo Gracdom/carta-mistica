@@ -261,12 +261,16 @@ function TarotistaCardsGrid({ selectedId, onSelect }) {
   )
 }
 
-function BubbleBot({ children, className = '', time = horaCorta(), showAvatar = true }) {
+function BubbleBot({ children, className = '', time = horaCorta(), showAvatar = true, avatarUrl = null, avatarAlt = 'Tarotista' }) {
   return (
     <div className={`flex items-end gap-2 max-w-[92%] ${className}`}>
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0 transition-opacity ${showAvatar ? 'opacity-100' : 'opacity-0'}`}
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0 overflow-hidden transition-opacity ${showAvatar ? 'opacity-100' : 'opacity-0'}`}
         style={{ background: 'rgba(109,40,217,.35)', border: '1px solid rgba(167,139,250,.4)' }}>
-        ✦
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={avatarAlt} className="w-full h-full object-cover" />
+        ) : (
+          '✦'
+        )}
       </div>
       <div className="rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed text-white/90 min-w-0 max-w-full"
         style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.08)' }}>
@@ -691,9 +695,13 @@ export default function ModalRegistros({ onClose, resumeConsultaId = null, resum
       >
         <div className="flex shrink-0 items-center justify-between px-3 sm:px-4 py-3 border-b border-white/10 bg-[#090517]">
           <div className="min-w-0 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0"
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 overflow-hidden"
               style={{ background: 'rgba(109,40,217,.35)', border: '1px solid rgba(167,139,250,.4)' }}>
-              ✦
+              {form.tarotista?.foto ? (
+                <img src={form.tarotista.foto} alt={form.tarotista?.nombre ?? 'Tarotista'} className="w-full h-full object-cover" />
+              ) : (
+                '✦'
+              )}
             </div>
             <div className="min-w-0">
               <p className="text-white text-sm font-semibold truncate">Consulta de Registros Akashicos</p>
@@ -710,13 +718,13 @@ export default function ModalRegistros({ onClose, resumeConsultaId = null, resum
         {estado === 'form' && (
           <>
             <div ref={bodyRef} className="flex-1 min-h-0 overflow-y-auto chat-scroll px-3 sm:px-4 py-4 space-y-3 overscroll-contain">
-              <BubbleBot className="msg-in" time={startedAt}>
+              <BubbleBot className="msg-in" time={startedAt} avatarUrl={form.tarotista?.foto} avatarAlt={form.tarotista?.nombre ?? 'Tarotista'}>
                 Hola ✨ Soy {form.tarotista?.nombre ?? 'tu tarotista'}, tu guia en esta consulta. Te voy a hacer unas preguntas cortitas para preparar tu lectura.
               </BubbleBot>
 
               {pasosCompletados.map(i => (
                 <div key={i} className="space-y-2">
-                  <BubbleBot className="msg-in" time={startedAt}>{PREGUNTAS[i].pregunta}</BubbleBot>
+                  <BubbleBot className="msg-in" time={startedAt} avatarUrl={form.tarotista?.foto} avatarAlt={form.tarotista?.nombre ?? 'Tarotista'}>{PREGUNTAS[i].pregunta}</BubbleBot>
                   <BubbleUser>{formatValue(i, form)}</BubbleUser>
                 </div>
               ))}
@@ -725,7 +733,7 @@ export default function ModalRegistros({ onClose, resumeConsultaId = null, resum
                 <>
                   {botEscribiendo && <TypingBubble time={horaCorta()} />}
                   {!botEscribiendo && (
-                    <BubbleBot className="msg-in" time={horaCorta()}>
+                    <BubbleBot className="msg-in" time={horaCorta()} avatarUrl={form.tarotista?.foto} avatarAlt={form.tarotista?.nombre ?? 'Tarotista'}>
                       {PREGUNTAS[paso].pregunta}
                     </BubbleBot>
                   )}
@@ -734,7 +742,7 @@ export default function ModalRegistros({ onClose, resumeConsultaId = null, resum
                 <>
                   {botEscribiendo && <TypingBubble time={horaCorta()} />}
                   {!botEscribiendo && (
-                    <BubbleBot className="msg-in" time={horaCorta()}>
+                    <BubbleBot className="msg-in" time={horaCorta()} avatarUrl={form.tarotista?.foto} avatarAlt={form.tarotista?.nombre ?? 'Tarotista'}>
                       Para enfocarme mejor, decime en que temas queres que profundice.
                     </BubbleBot>
                   )}
@@ -845,7 +853,7 @@ export default function ModalRegistros({ onClose, resumeConsultaId = null, resum
 
         {estado === 'preview' && (
           <div className="flex-1 min-h-0 overflow-y-auto chat-scroll px-3 sm:px-4 py-4 space-y-3 overscroll-contain">
-            <BubbleBot className="msg-in" time={horaCorta()}>
+            <BubbleBot className="msg-in" time={horaCorta()} avatarUrl={form.tarotista?.foto} avatarAlt={form.tarotista?.nombre ?? 'Tarotista'}>
               Gracias por esperar, {form.nombre.split(' ')[0] || form.nombre}. Soy {form.tarotista?.nombre ?? 'tu tarotista'} y ya tengo la primera parte de tu lectura.
             </BubbleBot>
             <BubbleBot className="msg-in" time={horaCorta()} showAvatar={false}>
