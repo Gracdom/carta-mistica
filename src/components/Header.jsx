@@ -32,19 +32,19 @@ export default function Header() {
 
   return (
     <>
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 pt-[env(safe-area-inset-top,0px)] ${
       scrolled
         ? 'bg-[#050511]/80 backdrop-blur-lg border-b border-white/8 shadow-lg shadow-black/30'
         : 'bg-transparent'
     }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-2 sm:gap-4 min-w-0">
 
         {/* Logo */}
-        <Link to="/" className="flex items-center flex-shrink-0">
+        <Link to="/" className="flex items-center flex-shrink-0 min-w-0 max-w-[min(100%,200px)] sm:max-w-none">
           <img
             src="/logo.png"
             alt="Carta Mística"
-            className="h-12 sm:h-14 w-auto object-contain"
+            className="h-11 sm:h-12 md:h-14 w-auto object-contain object-left"
             style={{ mixBlendMode: 'screen' }}
           />
         </Link>
@@ -105,9 +105,11 @@ export default function Header() {
         {/* Mobile toggle */}
         {!isDirectorio && (
           <button
-            className="md:hidden text-white p-1"
+            type="button"
+            className="md:hidden flex items-center justify-center min-h-[44px] min-w-[44px] shrink-0 -mr-1 text-white rounded-lg hover:bg-white/5 active:bg-white/10"
             onClick={() => setOpen(!open)}
-            aria-label="Menú"
+            aria-expanded={open}
+            aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
           >
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
@@ -116,7 +118,7 @@ export default function Header() {
 
       {/* Mobile drawer */}
       {open && (
-        <div className="md:hidden bg-[#0D0B2B] border-t border-white/10 px-5 py-5 flex flex-col gap-4">
+        <div className="md:hidden bg-[#0D0B2B] border-t border-white/10 px-5 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] flex flex-col gap-4 max-h-[min(75vh,calc(100dvh-5rem))] overflow-y-auto overscroll-contain">
           {/* Logo mobile */}
           <Link to="/" onClick={() => setOpen(false)} className="mb-1">
             <img src="/logo.png" alt="Carta Mística" className="h-11 w-auto object-contain" style={{ mixBlendMode: 'screen' }} />

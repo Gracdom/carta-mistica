@@ -101,7 +101,7 @@ const GLOBAL_STYLES = `
 // ── Hero ──────────────────────────────────────────────────────────────────────
 function Hero({ onOpenModal }) {
   return (
-    <section className="relative min-h-[92vh] flex flex-col items-center justify-center overflow-hidden text-center px-4"
+    <section className="relative min-h-[100dvh] sm:min-h-[92vh] flex flex-col items-center justify-center overflow-x-clip overflow-y-hidden text-center px-4 sm:px-5"
       style={{ background:'radial-gradient(ellipse 90% 75% at 50% -5%, #180f45 0%, #030312 65%)' }}>
 
       {/* Stars */}
@@ -138,7 +138,7 @@ function Hero({ onOpenModal }) {
       ))}
 
       {/* Contenido */}
-      <div className="relative max-w-4xl mx-auto pt-28 pb-16">
+      <div className="relative max-w-4xl mx-auto w-full min-w-0 pt-[max(7rem,calc(env(safe-area-inset-top,0px)+5.25rem))] sm:pt-28 pb-12 sm:pb-16">
         {/* Badge */}
         <div className="hero-title inline-flex items-center gap-2.5 mb-8"
           style={{ background:'linear-gradient(135deg,rgba(109,40,217,.28),rgba(168,85,247,.15))', border:'1px solid rgba(167,139,250,.35)', borderRadius:'9999px', padding:'10px 22px' }}>
@@ -155,29 +155,26 @@ function Hero({ onOpenModal }) {
           <span className="grad-text">de tu alma</span>
         </h1>
 
-        <p className="hero-sub text-gray-400 text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto mb-4">
+        <p className="hero-sub text-gray-400 text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto mb-10">
           Accedé al campo akáshico de tu alma y conocé tu misión de vida, tus bloqueos kármicos
           y las respuestas espirituales que solo vos podés recibir.
         </p>
-        <p className="text-purple-400/70 text-sm mb-10">
-          Vista previa gratuita · Lectura completa disponible tras el pago
-        </p>
 
         {/* CTA */}
-        <div className="hero-cta flex flex-col sm:flex-row items-center justify-center gap-4 mb-14">
+        <div className="hero-cta flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 mb-12 sm:mb-14 w-full max-w-md sm:max-w-none mx-auto px-1 sm:px-0">
           <button onClick={onOpenModal}
-            className="btn-glow inline-flex items-center gap-2.5 text-white font-bold px-10 py-4 rounded-full text-base cursor-pointer"
+            className="btn-glow w-full sm:w-auto justify-center inline-flex items-center gap-2.5 text-white font-bold px-8 sm:px-10 py-3.5 sm:py-4 rounded-full text-base cursor-pointer min-h-[48px]"
             style={{ background:'linear-gradient(135deg,#6d28d9,#9333ea)', boxShadow:'0 0 28px rgba(139,92,246,.4)' }}>
-            <Sparkles size={18} /> Consultar mis Registros
+            <Sparkles size={18} className="shrink-0" /> Consultar mis Registros
           </button>
           <a href="#como-funciona"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white text-sm font-medium transition-colors border border-white/10 hover:border-white/20 px-6 py-4 rounded-full">
-            Ver cómo funciona <ArrowRight size={14} />
+            className="w-full sm:w-auto justify-center inline-flex items-center gap-2 text-gray-400 hover:text-white text-sm font-medium transition-colors border border-white/10 hover:border-white/20 px-6 py-3.5 sm:py-4 rounded-full min-h-[48px]">
+            Ver cómo funciona <ArrowRight size={14} className="shrink-0" />
           </a>
         </div>
 
         {/* Stats */}
-        <div className="hero-stats flex flex-wrap justify-center gap-10 sm:gap-16 pt-8 border-t border-white/8">
+        <div className="hero-stats flex flex-wrap justify-center gap-x-8 gap-y-6 sm:gap-16 pt-8 border-t border-white/8 px-1">
           {[
             { n:'+2.000',  label:'Lecturas realizadas'   },
             { n:'Gratis',  label:'Vista previa'          },

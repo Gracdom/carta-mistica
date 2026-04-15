@@ -26,7 +26,7 @@ const PREGUNTAS = [
 const TAROTISTAS = [
   {
     id: 'luna',
-    nombre: 'Luna',
+    nombre: 'Esmeralda Llanos',
     especialidad: 'Amor y relaciones',
     icon: '♡',
     color: 'rgba(236,72,153,.65)',
@@ -38,7 +38,7 @@ const TAROTISTAS = [
   },
   {
     id: 'gale',
-    nombre: 'Gale',
+    nombre: 'Maestro Joao',
     especialidad: 'Trabajo y proposito',
     icon: '✴',
     color: 'rgba(16,185,129,.65)',
@@ -50,7 +50,7 @@ const TAROTISTAS = [
   },
   {
     id: 'aurora',
-    nombre: 'Aurora',
+    nombre: 'Marta de la Cruz',
     especialidad: 'Dinero y abundancia',
     icon: '☽',
     color: 'rgba(234,179,8,.65)',
@@ -218,8 +218,8 @@ function TarotistaCardsGrid({ selectedId, onSelect }) {
               />
             </div>
 
-            <div className="relative z-10 text-center mt-2">
-              <p className="font-playfair text-[28px] leading-none text-white mb-1 tracking-wide">{t.nombre}</p>
+            <div className="relative z-10 text-center mt-2 px-0.5">
+              <p className="font-playfair text-xl sm:text-2xl md:text-[28px] leading-tight text-white mb-1 tracking-wide break-words hyphens-auto">{t.nombre}</p>
               <p className="text-[10px] text-white/95 leading-relaxed px-0.5 line-clamp-3">{t.descripcion}</p>
               <p className="text-[9px] text-white/92 leading-relaxed mt-1">Especialista en {t.especialidad.toLowerCase()}.</p>
               <p className="text-[10px] text-white font-semibold mt-1">{t.experiencia}</p>
@@ -268,7 +268,7 @@ function BubbleBot({ children, className = '', time = horaCorta(), showAvatar = 
         style={{ background: 'rgba(109,40,217,.35)', border: '1px solid rgba(167,139,250,.4)' }}>
         ✦
       </div>
-      <div className="rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed text-white/90"
+      <div className="rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed text-white/90 min-w-0 max-w-full"
         style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.08)' }}>
         {children}
         <div className="text-[10px] text-white/40 mt-2">{time}</div>
@@ -279,9 +279,9 @@ function BubbleBot({ children, className = '', time = horaCorta(), showAvatar = 
 
 function BubbleUser({ children, time = horaCorta() }) {
   return (
-    <div className="max-w-[88%] ml-auto rounded-2xl rounded-tr-sm px-4 py-3 text-sm leading-relaxed text-white">
+    <div className="max-w-[min(88%,100%)] ml-auto min-w-0 rounded-2xl rounded-tr-sm px-4 py-3 text-sm leading-relaxed text-white">
       <div style={{ background: 'linear-gradient(135deg,rgba(109,40,217,.9),rgba(139,92,246,.78))', border: '1px solid rgba(167,139,250,.45)' }}
-        className="rounded-2xl rounded-tr-sm px-4 py-3">
+        className="rounded-2xl rounded-tr-sm px-4 py-3 break-words">
         {children}
         <div className="text-[10px] text-white/65 mt-2 flex items-center justify-end gap-1">
           <span>{time}</span>
@@ -627,13 +627,14 @@ export default function ModalRegistros({ onClose, resumeConsultaId = null, resum
           onClick={e => e.stopPropagation()}
         >
           <div className="flex shrink-0 items-center justify-between px-3 sm:px-4 py-3 border-b border-white/10 bg-[#090517]">
-            <p className="text-white text-sm font-semibold">Elegí tu tarotista</p>
+            <p className="text-white text-sm font-semibold pr-2">Elegí tu tarotista</p>
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white/35 hover:text-white/75 hover:bg-white/5 transition-all"
+              className="min-h-[44px] min-w-[44px] shrink-0 rounded-full flex items-center justify-center text-white/35 hover:text-white/75 hover:bg-white/5 transition-all -mr-1"
+              aria-label="Cerrar"
             >
-              <X size={14} />
+              <X size={18} />
             </button>
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto chat-scroll px-3 sm:px-4 py-4 sm:py-5 space-y-4 overscroll-contain">
@@ -699,9 +700,10 @@ export default function ModalRegistros({ onClose, resumeConsultaId = null, resum
               <p className="text-violet-300/65 text-xs">En linea</p>
             </div>
           </div>
-          <button onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white/35 hover:text-white/75 hover:bg-white/5 transition-all">
-            <X size={14} />
+          <button type="button" onClick={onClose}
+            className="min-h-[44px] min-w-[44px] shrink-0 rounded-full flex items-center justify-center text-white/35 hover:text-white/75 hover:bg-white/5 transition-all -mr-1"
+            aria-label="Cerrar">
+            <X size={18} />
           </button>
         </div>
 
@@ -809,7 +811,7 @@ export default function ModalRegistros({ onClose, resumeConsultaId = null, resum
                       onChange={e => set(currentQuestion.key, e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && enviarRespuestaActual()}
                       placeholder={currentQuestion.placeholder}
-                      className="w-full min-w-0 flex-1 h-11 rounded-xl px-3 text-sm bg-white/5 border border-white/10 focus:border-violet-400/60 outline-none text-white placeholder:text-white/35 [color-scheme:dark]"
+                      className="w-full min-w-0 flex-1 h-12 sm:h-11 rounded-xl px-3 text-base sm:text-sm bg-white/5 border border-white/10 focus:border-violet-400/60 outline-none text-white placeholder:text-white/35 [color-scheme:dark]"
                     />
                     <button
                       type="button"

@@ -13,15 +13,20 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    overflow-x: clip;
   }
 
   body {
     margin: 0;
+    min-width: 0;
+    overflow-x: clip;
     background-color: #050511;
     color: #ffffff;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-family: var(--font-sans);
+    /* Evita zoom accidental en inputs en iOS al enfocar (útil si font-size < 16px en algún campo) */
+    -webkit-text-size-adjust: 100%;
   }
 
   *,

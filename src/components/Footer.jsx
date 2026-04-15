@@ -3,8 +3,8 @@ import { Mail, Instagram, Facebook, Youtube, Phone } from 'lucide-react'
 
 export default function Footer() {
   return (
-    <footer className="bg-[#030310] border-t border-white/5 pt-14 pb-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+    <footer className="bg-[#030310] border-t border-white/5 pt-12 sm:pt-14 pb-[max(2rem,env(safe-area-inset-bottom,0px))]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 min-w-0">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
 
           {/* Brand */}
@@ -120,11 +120,11 @@ export default function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-gray-600 text-xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+          <p className="text-gray-600 text-xs max-w-prose mx-auto sm:mx-0">
             © 2026 La Carta Mística. Servicio enfocado en Argentina y para toda la comunidad latina en el mundo.
           </p>
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="flex flex-wrap justify-center sm:justify-end gap-x-4 gap-y-2 w-full sm:w-auto">
             {[
               { label: 'Términos de uso', to: '/terminos' },
               { label: 'Privacidad', to: '/privacidad' },
@@ -143,7 +143,7 @@ export default function Footer() {
           <img
             src="/grupo-gracdom.png"
             alt="GRACDOM"
-            className="h-5 sm:h-6 w-auto max-w-[min(100%,200px)] object-contain"
+            className="h-[18px] w-auto max-w-[min(100%,200px)] object-contain"
           />
         </div>
       </div>
